@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+{% load page_assets %}
+
+{% block title %}Contact Us - CodeCompiler{% endblock %}
+
+{% block links %}
+{% load_page_css 'contact' %}
+{% endblock %}
+
+{% block body %}
+<!-- Hero Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <div class="container text-white text-center">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <h1 class="display-4 fw-bold mb-3">Get in Touch</h1>
+        <p class="lead">We'd love to hear from you! Reach out with questions, feedback, or collaboration ideas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Form & Info Section -->
+<section class="py-5">
+  <div class="container">
+    <div class="row g-5">
+      <!-- Contact Form -->
+      <div class="col-lg-8">
+        <div class="modern-card">
+          <div class="modern-card-header">
+            <h3 class="mb-0 text-white">
+              <i class="bi bi-envelope me-2"></i>Send us a Message
+            </h3>
+          </div>
+          <div class="modern-card-body">
+            <form id="contactForm" action="#" method="POST">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="firstName" class="form-label fw-bold">
+                    <i class="bi bi-person me-1"></i>First Name
+                  </label>
+                  <input type="text" class="form-control" id="firstName" name="first_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="lastName" class="form-label fw-bold">
+                    <i class="bi bi-person me-1"></i>Last Name
+                  </label>
+                  <input type="text" class="form-control" id="lastName" name="last_name" required>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="email" class="form-label fw-bold">
+                  <i class="bi bi-envelope me-1"></i>Email Address
+                </label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+              
+              <div class="mb-3">
+                <label for="subject" class="form-label fw-bold">
+                  <i class="bi bi-chat-dots me-1"></i>Subject
+                </label>
+                <select class="form-select" id="subject" name="subject" required>
+                  <option value="">Choose a topic...</option>
+                  <option value="general">General Inquiry</option>
+                  <option value="support">Technical Support</option>
+                  <option value="feedback">Feedback & Suggestions</option>
+                  <option value="bug">Bug Report</option>
+                  <option value="feature">Feature Request</option>
+                  <option value="partnership">Partnership</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              
+              <div class="mb-4">
+                <label for="message" class="form-label fw-bold">
+                  <i class="bi bi-chat-text me-1"></i>Message
+                </label>
+                <textarea class="form-control" id="message" name="message" rows="6" placeholder="Tell us how we can help you..." required></textarea>
+              </div>
+              
+              <div class="mb-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                  <label class="form-check-label" for="newsletter">
+                    I'd like to receive updates about new features and coding challenges
+                  </label>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-modern-primary btn-lg">
+                <i class="bi bi-send me-2"></i>Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Contact Information -->
+      <div class="col-lg-4">
+        <div class="modern-card mb-4">
+          <div class="modern-card-header bg-success">
+            <h4 class="mb-0 text-white">
+              <i class="bi bi-info-circle me-2"></i>Contact Information
+            </h4>
+          </div>
+          <div class="modern-card-body">
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center mb-2">
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                  <i class="bi bi-envelope text-white"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-bold">Email</h6>
+                  <small class="text-muted">We reply within 24 hours</small>
+                </div>
+              </div>
+              <a href="mailto:iu175409@gmail.com" class="text-decoration-none">iu175409@gmail.com</a>
+            </div>
+            
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center mb-2">
+                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                  <i class="bi bi-telephone text-white"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-bold">Phone</h6>
+                  <small class="text-muted">Mon-Fri, 9 AM - 6 PM IST</small>
+                </div>
+              </div>
+              <a href="tel:+916351334613" class="text-decoration-none">+91-635-133-4613</a>
+            </div>
+            
+            <div class="contact-item">
+              <div class="d-flex align-items-center mb-2">
+                <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                  <i class="bi bi-clock text-white"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-bold">Response Time</h6>
+                  <small class="text-muted">Average response</small>
+                </div>
+              </div>
+              <span class="fw-bold text-success">< 4 hours</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Social Links -->
+        <div class="modern-card">
+          <div class="modern-card-header bg-info">
+            <h4 class="mb-0 text-white">
+              <i class="bi bi-share me-2"></i>Follow Us
+            </h4>
+          </div>
+          <div class="modern-card-body">
+            <p class="text-muted mb-3">Stay connected for updates, tips, and new features</p>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="https://github.com/uday-0408" target="_blank" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-github me-1"></i>GitHub
+              </a>
+              <a href="https://twitter.com/" target="_blank" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-twitter me-1"></i>Twitter
+              </a>
+              <a href="https://www.linkedin.com/in/uday-chauhan-866669311/" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-linkedin me-1"></i>LinkedIn
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const contactForm = document.getElementById('contactForm');
+  
+  contactForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(contactForm);
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="loading-spinner me-2"></div>Sending...';
+    
+    // Simulate form submission (replace with actual endpoint)
+    setTimeout(() => {
+      // Reset form
+      contactForm.reset();
+      
+      // Show success message
+      const successAlert = document.createElement('div');
+      successAlert.className = 'alert alert-success alert-dismissible fade show';
+      successAlert.innerHTML = `
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Message sent successfully!</strong> We'll get back to you within 24 hours.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      
+      contactForm.parentNode.insertBefore(successAlert, contactForm);
+      
+      // Reset button
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+      
+      // Auto-hide success message
+      setTimeout(() => {
+        if (successAlert.parentNode) {
+          successAlert.remove();
+        }
+      }, 5000);
+    }, 2000);
+  });
+});
+</script>
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'contact' %}
+{% endblock %}

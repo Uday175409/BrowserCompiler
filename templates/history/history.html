@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Submission History - CodeCompiler{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="display-5 fw-bold mb-2">
+        <i class="bi bi-clock-history text-primary me-2"></i>
+        Submission History
+      </h1>
+      <p class="lead text-muted">Track your coding journey and progress</p>
+    </div>
+    <div class="d-flex gap-2">
+      <select class="form-select" id="statusFilter" style="width: auto;">
+        <option value="">All Status</option>
+        <option value="Accepted">Accepted</option>
+        <option value="Wrong Answer">Wrong Answer</option>
+        <option value="Error">Error</option>
+        <option value="Time Limit Exceeded">Time Limit Exceeded</option>
+      </select>
+      <select class="form-select" id="languageFilter" style="width: auto;">
+        <option value="">All Languages</option>
+        <option value="python">Python</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+        <option value="javascript">JavaScript</option>
+      </select>
+    </div>
+  </div>
+
+  {% if not user.is_authenticated %}
+  <div class="modern-card text-center">
+    <div class="modern-card-body py-5">
+      <i class="bi bi-person-x display-1 text-muted mb-3"></i>
+      <h4 class="fw-bold mb-3">Authentication Required</h4>
+      <p class="text-muted mb-4">Please log in to view your submission history</p>
+      <a href="{% url 'auth-page' %}" class="btn btn-modern-primary">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </a>
+    </div>
+  </div>
+  {% elif submissions %}
+  
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-send-check text-primary fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ total_submissions|default:0 }}</h4>
+          <p class="text-muted small mb-0">Total Submissions</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-check-circle text-success fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ accepted_count|default:0 }}</h4>
+          <p class="text-muted small mb-0">Accepted</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-x-circle text-danger fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ wrong_count|default:0 }}</h4>
+          <p class="text-muted small mb-0">Wrong Answer</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-percent text-warning fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ success_rate|default:0 }}%</h4>
+          <p class="text-muted small mb-0">Success Rate</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submissions List -->
+  <div id="submissionsContainer">
+    {% for record in submissions %}
+    <div class="modern-card mb-4 submission-item animate-fade-in-up" style="animation-delay: {{ forloop.counter0|mul:0.1 }}s;" 
+         data-status="{{ record.submissions.0.status }}" data-language="{{ record.submissions.0.language }}">
+      <div class="modern-card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1 fw-bold">
+              <i class="bi bi-puzzle me-2"></i>
+              Problem #{{ record.problem_id }}
+              {% if record.problem_title %}
+              - {{ record.problem_title }}
+              {% endif %}
+            </h5>
+            <small class="text-muted">
+              <i class="bi bi-calendar3 me-1"></i>
+              First submitted: {{ record.created_at|date:"M d, Y \a\t H:i" }}
+            </small>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary">{{ record.submissions|length }} submission{{ record.submissions|length|pluralize }}</span>
+            <button class="btn btn-outline-light btn-sm" onclick="toggleSubmissions({{ forloop.counter0 }})">
+              <i class="bi bi-chevron-down" id="toggle-icon-{{ forloop.counter0 }}"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modern-card-body">
+        <div class="submissions-list" id="submissions-{{ forloop.counter0 }}" style="display: none;">
+          {% for sub in record.submissions %}
+          <div class="submission-entry mb-3 p-3 rounded border {% if sub.status == 'Accepted' %}border-success bg-light-success{% elif sub.status == 'Wrong Answer' %}border-danger bg-light-danger{% else %}border-warning bg-light-warning{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-3">
+                <span class="status-indicator status-{{ sub.status|lower|cut:' ' }}">
+                  {% if sub.status == 'Accepted' %}
+                  <i class="bi bi-check-circle-fill me-1"></i>
+                  {% elif sub.status == 'Wrong Answer' %}
+                  <i class="bi bi-x-circle-fill me-1"></i>
+                  {% elif sub.status == 'Error' %}
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                  {% else %}
+                  <i class="bi bi-clock-fill me-1"></i>
+                  {% endif %}
+                  {{ sub.status }}
+                </span>
+                
+                <span class="badge bg-primary">
+                  <i class="bi bi-code me-1"></i>{{ sub.language|title }}
+                </span>
+                
+                {% if sub.time_taken %}
+                <span class="badge bg-info">
+                  <i class="bi bi-stopwatch me-1"></i>{{ sub.time_taken }}s
+                </span>
+                {% endif %}
+              </div>
+              
+              <div class="d-flex align-items-center gap-2">
+                <small class="text-muted">
+                  <i class="bi bi-clock me-1"></i>
+                  {{ sub.submitted_at|date:"M d, H:i" }}
+                </small>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleCode({{ forloop.parentloop.counter0 }}, {{ forloop.counter0 }})">
+                  <i class="bi bi-code-slash me-1"></i>View Code
+                </button>
+              </div>
+            </div>
+
+            <!-- Code Block (Initially Hidden) -->
+            <div class="code-container" id="code-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}" style="display: none;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted fw-bold">
+                  <i class="bi bi-file-code me-1"></i>Source Code
+                </small>
+                <button class="btn btn-outline-secondary btn-sm" onclick="copyCode({{ forloop.parentloop.counter0 }}, {{ forloop.counter0 }})">
+                  <i class="bi bi-clipboard me-1"></i>Copy
+                </button>
+              </div>
+              <pre class="code-block" id="code-content-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}"><code>{{ sub.code }}</code></pre>
+            </div>
+
+            <!-- Results (if available) -->
+            {% if sub.result_data %}
+            <div class="mt-2">
+              <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                {% if sub.result_data.error %}
+                Error: {{ sub.result_data.error|truncatewords:10 }}
+                {% elif sub.result_data.outputs %}
+                Output: {{ sub.result_data.outputs.0|truncatewords:10 }}
+                {% endif %}
+              </small>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Summary of latest submission -->
+        <div class="latest-submission-summary">
+          {% with latest=record.submissions.0 %}
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+              <span class="status-indicator status-{{ latest.status|lower|cut:' ' }}">
+                {% if latest.status == 'Accepted' %}
+                <i class="bi bi-check-circle-fill me-1"></i>
+                {% elif latest.status == 'Wrong Answer' %}
+                <i class="bi bi-x-circle-fill me-1"></i>
+                {% elif latest.status == 'Error' %}
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                {% else %}
+                <i class="bi bi-clock-fill me-1"></i>
+                {% endif %}
+                Latest: {{ latest.status }}
+              </span>
+              
+              <span class="badge bg-primary">{{ latest.language|title }}</span>
+              
+              {% if latest.time_taken %}
+              <span class="badge bg-info">{{ latest.time_taken }}s</span>
+              {% endif %}
+            </div>
+            
+            <div class="d-flex gap-2">
+              <small class="text-muted">{{ latest.submitted_at|date:"M d, H:i" }}</small>
+              {% if record.problem_slug %}
+              <a href="{% url 'compile_with_problem' slug=record.problem_slug %}" class="btn btn-modern-primary btn-sm">
+                <i class="bi bi-arrow-right me-1"></i>Solve Again
+              </a>
+              {% else %}
+              <a href="{% url 'compile' %}" class="btn btn-modern-secondary btn-sm">
+                <i class="bi bi-code-slash me-1"></i>Go to Compiler
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="modern-card text-center">
+    <div class="modern-card-body py-5">
+      <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+      <h4 class="fw-bold mb-3">No Submissions Yet</h4>
+      <p class="text-muted mb-4">Start solving problems to see your submission history here</p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'problems_list' %}" class="btn btn-modern-primary">
+          <i class="bi bi-puzzle me-2"></i>Browse Problems
+        </a>
+        <a href="{% url 'compile' %}" class="btn btn-modern-secondary">
+          <i class="bi bi-code-slash me-2"></i>Free Compiler
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.bg-light-success {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.bg-light-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.bg-light-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.submission-entry {
+  transition: all 0.3s ease;
+}
+
+.submission-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.code-container {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const statusFilter = document.getElementById('statusFilter');
+  const languageFilter = document.getElementById('languageFilter');
+  const submissionItems = document.querySelectorAll('.submission-item');
+
+  // Filter functionality
+  function filterSubmissions() {
+    const selectedStatus = statusFilter.value;
+    const selectedLanguage = languageFilter.value;
+
+    submissionItems.forEach(item => {
+      const itemStatus = item.dataset.status;
+      const itemLanguage = item.dataset.language;
+      
+      const statusMatch = !selectedStatus || itemStatus === selectedStatus;
+      const languageMatch = !selectedLanguage || itemLanguage === selectedLanguage;
+      
+      if (statusMatch && languageMatch) {
+        item.style.display = 'block';
+        item.classList.add('animate-fade-in-up');
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  statusFilter.addEventListener('change', filterSubmissions);
+  languageFilter.addEventListener('change', filterSubmissions);
+});
+
+function toggleSubmissions(index) {
+  const submissionsList = document.getElementById(`submissions-${index}`);
+  const toggleIcon = document.getElementById(`toggle-icon-${index}`);
+  
+  if (submissionsList.style.display === 'none') {
+    submissionsList.style.display = 'block';
+    toggleIcon.className = 'bi bi-chevron-up';
+  } else {
+    submissionsList.style.display = 'none';
+    toggleIcon.className = 'bi bi-chevron-down';
+  }
+}
+
+function toggleCode(submissionIndex, codeIndex) {
+  const codeContainer = document.getElementById(`code-${submissionIndex}-${codeIndex}`);
+  
+  if (codeContainer.style.display === 'none') {
+    codeContainer.style.display = 'block';
+  } else {
+    codeContainer.style.display = 'none';
+  }
+}
+
+function copyCode(submissionIndex, codeIndex) {
+  const codeContent = document.getElementById(`code-content-${submissionIndex}-${codeIndex}`).textContent;
+  
+  navigator.clipboard.writeText(codeContent).then(() => {
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    notification.innerHTML = `
+      <i class="bi bi-check-circle me-2"></i>Code copied to clipboard!
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 3000);
+  }).catch(err => {
+    alert('Failed to copy code to clipboard');
+  });
+}
+</script>
+{% endblock %}

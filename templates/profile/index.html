@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load static %}
+{% load page_assets %}
+
+{% block links %}
+{% load_page_css 'profile' %}
+<style>
+  .profile-info-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+  }
+  
+  .stats-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <!-- Profile Header -->
+      <div class="modern-card mb-4">
+        <div class="modern-card-body text-center">
+          <div class="row align-items-center">
+            <div class="col-md-4 mb-3 mb-md-0">
+              {% if user.profile_pic %}
+                <img
+                  src="{{ user.profile_pic.url }}"
+                  alt="Profile Picture"
+                  class="profile-avatar rounded-circle mx-auto d-block"
+                >
+              {% else %}
+                <div class="profile-avatar rounded-circle mx-auto d-flex align-items-center justify-content-center bg-light">
+                  <i class="bi bi-person-circle display-1 text-muted"></i>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="col-md-8">
+              <h1 class="display-5 fw-bold text-primary mb-2">
+                {{ user.username|default:user.email }}
+              </h1>
+              <p class="lead text-muted mb-3">
+                <i class="bi bi-envelope me-2"></i>{{ user.email }}
+              </p>
+              <p class="text-muted">
+                <i class="bi bi-calendar me-2"></i>Member since {{ user.created_at|date:"F Y" }}
+              </p>
+              
+              <div class="mt-4">
+                <a href="{% url 'update-profile' %}" class="btn btn-modern-primary btn-lg me-3">
+                  <i class="bi bi-pencil me-2"></i>Edit Profile
+                </a>
+                <a href="{% url 'history' %}" class="btn btn-modern-secondary btn-lg">
+                  <i class="bi bi-clock-history me-2"></i>View History
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-8 mb-4">
+          <div class="modern-card">
+            <div class="modern-card-header">
+              <h3 class="mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>Profile Information
+              </h3>
+            </div>
+            <div class="modern-card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-person me-2"></i>Username
+                    </h6>
+                    <p class="mb-0 fw-bold">{{ user.username|default:"Not provided" }}</p>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-envelope me-2"></i>Email
+                    </h6>
+                    <p class="mb-0 fw-bold">{{ user.email|default:"Not provided" }}</p>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-telephone me-2"></i>Phone
+                    </h6>
+                    <p class="mb-0 fw-bold">{{ user.phone|default:"Not provided" }}</p>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-person-badge me-2"></i>Gender
+                    </h6>
+                    <p class="mb-0 fw-bold">{{ user.gender|default:"Not specified" }}</p>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-calendar me-2"></i>Date of Birth
+                    </h6>
+                    <p class="mb-0 fw-bold">
+                      {% if user.dob %}
+                        {{ user.dob|date:"F d, Y" }}
+                      {% else %}
+                        Not provided
+                      {% endif %}
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <div class="profile-info-card">
+                    <h6 class="text-muted mb-1">
+                      <i class="bi bi-clock me-2"></i>Member Since
+                    </h6>
+                    <p class="mb-0 fw-bold">{{ user.created_at|date:"F d, Y" }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-lg-4 mb-4">
+          <div class="modern-card">
+            <div class="modern-card-header">
+              <h3 class="mb-0">
+                <i class="bi bi-graph-up me-2"></i>Quick Stats
+              </h3>
+            </div>
+            <div class="modern-card-body">
+              <div class="stats-card mb-3">
+                <i class="bi bi-code-square display-4 mb-2"></i>
+                <h4 class="mb-1">0</h4>
+                <p class="mb-0">Problems Solved</p>
+              </div>
+              
+              <div class="bg-success rounded-3 p-3 text-white text-center mb-3">
+                <i class="bi bi-trophy display-4 mb-2"></i>
+                <h4 class="mb-1">0</h4>
+                <p class="mb-0">Submissions</p>
+              </div>
+              
+              <div class="bg-info rounded-3 p-3 text-white text-center">
+                <i class="bi bi-clock display-4 mb-2"></i>
+                <h4 class="mb-1">0</h4>
+                <p class="mb-0">Hours Coding</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'profile' %}
+{% endblock %}

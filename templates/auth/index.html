@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load static %}
+{% load page_assets %}
+
+{% block title %}Login & Register - CodeCompiler{% endblock %}
+
+{% block links %}
+{% load_page_css 'auth' %}
+{% endblock %}
+
+{% block body %}
+<!-- Auth Container -->
+<div class="auth-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="auth-card">
+                    <div class="row g-0">
+                        <!-- Login Section -->
+                        <div class="col-md-6">
+                            <div class="auth-section" id="loginSection">
+                                <div class="auth-header">
+                                    <h2 class="auth-title">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                                        Welcome Back
+                                    </h2>
+                                    <p class="auth-subtitle">Sign in to your account</p>
+                                </div>
+
+                                <form id="loginForm" method="post" action="{% url 'login' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="login">
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-envelope me-2"></i>
+                                            Email Address
+                                        </label>
+                                        <input type="email" name="email" class="form-control" required 
+                                               placeholder="Enter your email" data-autosave>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-lock me-2"></i>
+                                            Password
+                                        </label>
+                                        <div class="password-container">
+                                            <input type="password" name="password" class="form-control" required 
+                                                   placeholder="Enter your password">
+                                            <button type="button" class="password-toggle" onclick="togglePassword('loginForm')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember">
+                                        <label class="form-check-label" for="rememberMe">
+                                            Remember me
+                                        </label>
+                                    </div>
+
+                                    <button type="submit" class="auth-btn auth-btn-primary">
+                                        <span class="btn-text">Sign In</span>
+                                        <div class="loading-spinner"></div>
+                                    </button>
+                                </form>
+
+                                <div class="auth-divider">
+                                    <span>or</span>
+                                </div>
+
+                                <div class="social-auth">
+                                    <button class="social-btn google" onclick="socialLogin('google')">
+                                        <i class="bi bi-google me-2"></i>
+                                        Continue with Google
+                                    </button>
+                                    <button class="social-btn github" onclick="socialLogin('github')">
+                                        <i class="bi bi-github me-2"></i>
+                                        Continue with GitHub
+                                    </button>
+                                </div>
+
+                                <div class="auth-switch">
+                                    <p>Don't have an account? 
+                                        <a href="#" onclick="switchToRegister()">Sign up here</a>
+                                    </p>
+                                    <a href="#" class="forgot-password">Forgot your password?</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Register Section -->
+                        <div class="col-md-6">
+                            <div class="auth-section" id="registerSection">
+                                <div class="auth-header">
+                                    <h2 class="auth-title">
+                                        <i class="bi bi-person-plus me-2"></i>
+                                        Create Account
+                                    </h2>
+                                    <p class="auth-subtitle">Join our coding community</p>
+                                </div>
+
+                                <form id="registerForm" method="post" action="{% url 'register' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="register">
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-person me-2"></i>
+                                            Full Name
+                                        </label>
+                                        <input type="text" name="name" class="form-control" required 
+                                               placeholder="Enter your full name" data-autosave>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-at me-2"></i>
+                                            Username
+                                        </label>
+                                        <input type="text" name="username" class="form-control" required 
+                                               placeholder="Choose a username" data-autosave>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-envelope me-2"></i>
+                                            Email Address
+                                        </label>
+                                        <input type="email" name="email" class="form-control" required 
+                                               placeholder="Enter your email" data-autosave>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-telephone me-2"></i>
+                                            Phone Number
+                                        </label>
+                                        <input type="tel" name="phone" class="form-control" required 
+                                               placeholder="Enter your phone number" data-autosave>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-lock me-2"></i>
+                                            Password
+                                        </label>
+                                        <div class="password-container">
+                                            <input type="password" name="password" class="form-control" required 
+                                                   placeholder="Create a password" id="registerPassword">
+                                            <button type="button" class="password-toggle" onclick="togglePassword('registerForm')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="password-strength" id="passwordStrength"></div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="bi bi-lock-fill me-2"></i>
+                                            Confirm Password
+                                        </label>
+                                        <input type="password" name="confirm_password" class="form-control" required 
+                                               placeholder="Confirm your password" id="confirmPassword">
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                                        <label class="form-check-label" for="agreeTerms">
+                                            I agree to the <a href="#" target="_blank">Terms of Service</a> 
+                                            and <a href="#" target="_blank">Privacy Policy</a>
+                                        </label>
+                                    </div>
+
+                                    <button type="submit" class="auth-btn auth-btn-secondary">
+                                        <span class="btn-text">Create Account</span>
+                                        <div class="loading-spinner"></div>
+                                    </button>
+                                </form>
+
+                                <div class="auth-switch">
+                                    <p>Already have an account? 
+                                        <a href="#" onclick="switchToLogin()">Sign in here</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    {{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                {% if success %}
+                <div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    {{ success }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'auth' %}
+{% endblock %}

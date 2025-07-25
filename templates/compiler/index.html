@@ -1,0 +1,933 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block links %}
+<style>
+  .editor-container {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+  }
+  
+  .editor-toolbar {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    padding: 1rem;
+    color: white;
+  }
+  
+  .problem-panel {
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  
+  .output-panel {
+    background: #1a1a1a;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: 'Fira Code', monospace;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+  }
+  
+  .test-case-result {
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid;
+  }
+  
+  .test-case-passed {
+    background: rgba(0, 176, 155, 0.1);
+    border-left-color: var(--success-color);
+  }
+  
+  .test-case-failed {
+    background: rgba(255, 87, 34, 0.1);
+    border-left-color: var(--danger-color);
+  }
+  
+  .code-output {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Fira Code', monospace;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid mt-4">
+  {% if not_logged_in %}
+  <div class="alert alert-warning d-flex justify-content-between align-items-center animate-fade-in-up mb-4">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+      <div>
+        <strong>⚠️ Authentication Required</strong>
+        <p class="mb-0 small">You must be logged in to run or submit code. Join our community to save your progress!</p>
+      </div>
+    </div>
+    <div>
+      <a href="{% url 'auth-page' %}" class="btn btn-modern-primary me-2">Login</a>
+      <a href="{% url 'auth-page' %}" class="btn btn-modern-secondary">Register</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <!-- Problem Panel -->
+    {% if problem %}
+    <div class="col-lg-5 mb-4">
+      <div class="problem-panel">
+        <div class="modern-card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+              <i class="bi bi-puzzle me-2"></i>{{ problem.title }}
+            </h3>
+            <div class="d-flex gap-2">
+              <span class="difficulty-badge difficulty-{{ problem.difficulty|lower }}">
+                {{ problem.difficulty }}
+              </span>
+              <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#leaderboardModal">
+                <i class="bi bi-trophy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modern-card-body">
+          {% if problem.tags %}
+          <div class="mb-3">
+            <small class="text-muted">Tags:</small>
+            {% for tag in problem.tags|split:"," %}
+            <span class="badge bg-light text-dark me-1"># {{ tag|trim }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <h5 class="fw-bold text-primary">
+              <i class="bi bi-file-text me-2"></i>Problem Statement
+            </h5>
+            <div class="bg-light p-3 rounded">
+              {{ problem.statement|linebreaks }}
+            </div>
+          </div>
+
+          {% if problem.constraints %}
+          <div class="mb-4">
+            <h6 class="fw-bold text-secondary">
+              <i class="bi bi-gear me-2"></i>Constraints
+            </h6>
+            <div class="code-block">{{ problem.constraints }}</div>
+          </div>
+          {% endif %}
+
+          <div class="row">
+            {% if problem.input_format %}
+            <div class="col-md-6 mb-3">
+              <h6 class="fw-bold text-success">
+                <i class="bi bi-arrow-down-circle me-2"></i>Input Format
+              </h6>
+              <div class="code-block">{{ problem.input_format }}</div>
+            </div>
+            {% endif %}
+
+            {% if problem.output_format %}
+            <div class="col-md-6 mb-3">
+              <h6 class="fw-bold text-warning">
+                <i class="bi bi-arrow-up-circle me-2"></i>Output Format
+              </h6>
+              <div class="code-block">{{ problem.output_format }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Code Editor Panel -->
+    <div class="{% if problem %}col-lg-7{% else %}col-12{% endif %}">
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-code-slash me-2"></i>
+              {% if problem %}Code Editor{% else %}Monaco Code Compiler{% endif %}
+            </h4>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-light btn-sm" id="fullscreenBtn">
+                <i class="bi bi-fullscreen"></i>
+              </button>
+              <button class="btn btn-outline-light btn-sm" id="themeToggle">
+                <i class="bi bi-moon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <form id="codeForm" method="POST" action="">
+          {% csrf_token %}
+          
+          <!-- Editor Toolbar -->
+          <div class="editor-toolbar">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center gap-3">
+                  <label class="text-white small fw-bold">Language:</label>
+                  <select id="languageSelect" class="form-select form-select-sm language-selector">
+                    <option value="python" {% if language == "python" %}selected{% endif %}>
+                      <i class="bi bi-filetype-py"></i> Python
+                    </option>
+                    <option value="cpp" {% if language == "cpp" %}selected{% endif %}>
+                      <i class="bi bi-code-square"></i> C++
+                    </option>
+                    <option value="java" {% if language == "java" %}selected{% endif %}>
+                      <i class="bi bi-cup-hot"></i> Java
+                    </option>
+                    <option value="javascript" {% if language == "javascript" %}selected{% endif %}>
+                      <i class="bi bi-filetype-js"></i> JavaScript
+                    </option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end">
+                  <button type="submit" name="action" value="run" class="btn btn-modern-primary btn-sm">
+                    <i class="bi bi-play-fill me-1"></i>Run Code
+                  </button>
+                  {% if problem %}
+                  <button type="submit" name="action" value="submit" class="btn btn-modern-success btn-sm">
+                    <i class="bi bi-upload me-1"></i>Submit
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Input -->
+          <div class="p-3 bg-light border-top">
+            <label for="input" class="form-label fw-bold">
+              <i class="bi bi-terminal me-2"></i>Custom Input (optional)
+            </label>
+            <textarea name="input" rows="3" class="form-control" placeholder="Enter your custom input here (if required by the problem)">{{ input }}</textarea>
+          </div>
+
+          <input type="hidden" name="code" id="hiddenCode">
+          <input type="hidden" name="language" id="hiddenLanguage" value="{{ language|default:'python' }}">
+
+          <!-- Monaco Editor -->
+          <div id="editor" style="height: 500px;" class="border-top"></div>
+        </form>
+      </div>
+
+      <!-- Results Section -->
+      {% if action == 'run' and output %}
+      <div class="modern-card mt-4 animate-fade-in-up">
+        <div class="modern-card-header bg-info">
+          <h5 class="mb-0">
+            <i class="bi bi-terminal me-2"></i>Output
+          </h5>
+        </div>
+        <div class="modern-card-body">
+          <div class="output-panel">{{ output }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if action == 'run' and run_results %}
+      <div class="modern-card mt-4 animate-fade-in-up">
+        <div class="modern-card-header bg-primary">
+          <h5 class="mb-0">
+            <i class="bi bi-check-square me-2"></i>Test Results
+          </h5>
+        </div>
+        <div class="modern-card-body">
+          {% for result in run_results %}
+          <div class="test-case-result test-case-{% if result.passed %}passed{% else %}failed{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong>Test Case {{ forloop.counter }}</strong>
+              {% if result.passed %}
+              <span class="badge bg-success">
+                <i class="bi bi-check-circle me-1"></i>Passed
+              </span>
+              {% else %}
+              <span class="badge bg-danger">
+                <i class="bi bi-x-circle me-1"></i>Failed
+              </span>
+              {% endif %}
+            </div>
+            <div class="small">
+              <div><strong>Input:</strong> <code class="code-output">{{ result.input }}</code></div>
+              <div><strong>Expected:</strong> <code class="code-output">{{ result.expected }}</code></div>
+              <div><strong>Got:</strong> <code class="code-output">{{ result.output }}</code></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% elif action == 'submit' %}
+      <div class="modern-card mt-4 animate-fade-in-up">
+        <div class="modern-card-body text-center">
+          {% if all_passed %}
+          <div class="py-4">
+            <i class="bi bi-trophy-fill text-warning display-1 mb-3"></i>
+            <h3 class="fw-bold text-success mb-3">Congratulations! 🎉</h3>
+            <p class="lead">All {{ total_cases }} test cases passed!</p>
+            <div class="d-flex justify-content-center gap-3 mt-4">
+              <a href="{% url 'problems_list' %}" class="btn btn-modern-primary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Problems
+              </a>
+              <button class="btn btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#leaderboardModal">
+                <i class="bi bi-trophy me-2"></i>View Leaderboard
+              </button>
+            </div>
+          </div>
+          {% else %}
+          <div class="py-4">
+            <i class="bi bi-x-circle-fill text-danger display-1 mb-3"></i>
+            <h3 class="fw-bold text-danger mb-3">Solution Incorrect</h3>
+            <p class="lead">{{ passed_cases }} out of {{ total_cases }} test cases passed.</p>
+            <p class="text-muted">Failed at Test Case #{{ failed_case_number }}</p>
+            <button type="button" class="btn btn-modern-primary mt-3" onclick="document.getElementById('editor').scrollIntoView();">
+              <i class="bi bi-pencil me-2"></i>Try Again
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  {% if problem %}
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <h4 class="mb-0">
+            <i class="bi bi-chat-dots me-2"></i>Discussion ({{ comments|length }})
+          </h4>
+        </div>
+        <div class="modern-card-body">
+          {% if user.is_authenticated %}
+          <form method="POST" action="{% url 'submit-comment' problem.slug %}" class="mb-4">
+            {% csrf_token %}
+            <div class="mb-3">
+              <textarea name="comment" class="form-control" rows="3" placeholder="Share your thoughts, ask questions, or discuss solutions..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-modern-primary">
+              <i class="bi bi-send me-2"></i>Post Comment
+            </button>
+          </form>
+          {% else %}
+          <div class="text-center py-3 bg-light rounded mb-4">
+            <p class="mb-2">Want to join the discussion?</p>
+            <a href="{% url 'auth-page' %}" class="btn btn-modern-primary">
+              <i class="bi bi-person-plus me-2"></i>Login to Comment
+            </a>
+          </div>
+          {% endif %}
+
+          <div class="comments-section">
+            {% for comment in comments %}
+            <div class="modern-card mb-3 animate-fade-in-up" style="animation-delay: {{ forloop.counter0|mul:0.1 }}s;">
+              <div class="modern-card-body">
+                <div class="d-flex align-items-start">
+                  <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                    <span class="text-white fw-bold">{{ comment.username|first|upper }}</span>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <strong class="text-primary">{{ comment.username }}</strong>
+                      <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>{{ comment.timestamp }}
+                      </small>
+                    </div>
+                    <p class="mb-0">{{ comment.comment|linebreaks }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+              <i class="bi bi-chat display-1 text-muted mb-3"></i>
+              <p class="text-muted">No comments yet. Be the first to start the discussion!</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Leaderboard Modal -->
+<div class="modal fade" id="leaderboardModal" tabindex="-1" aria-labelledby="leaderboardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content modern-card">
+      <div class="modal-header modern-card-header">
+        <h5 class="modal-title" id="leaderboardModalLabel">
+          <i class="bi bi-trophy-fill me-2"></i>Leaderboard
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="loadingSpinner" class="text-center py-4">
+          <div class="loading-spinner mx-auto mb-3"></div>
+          <p class="text-muted">Loading leaderboard data...</p>
+        </div>
+        <canvas id="leaderboardChart" height="150" style="display: none;"></canvas>
+        <div id="leaderboardTable" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
+
+<script>
+// Enhanced Monaco Editor with modern features
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("🚀 Document loaded, initializing Monaco Editor");
+  console.log("⏰ Timestamp:", new Date().toISOString());
+  console.log("🌐 User Agent:", navigator.userAgent);
+  console.log("📱 Screen size:", window.screen.width + "x" + window.screen.height);
+  
+  let editor;
+  let currentTheme = 'vs-dark';
+  
+  console.log("🎨 Initial theme:", currentTheme);
+  
+  const templates = {
+    python: `{{ starter_codes.python|escapejs|default:"# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)" }}`,
+    cpp: `{{ starter_codes.cpp|escapejs|default:"#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << \"Hello, World!\" << endl;\n    return 0;\n}" }}`,
+    java: `{{ starter_codes.java|escapejs|default:"public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println(\"Hello, World!\");\n    }\n}" }}`,
+    javascript: `{{ starter_codes.javascript|escapejs|default:"// Your JavaScript code here\nfunction solve() {\n    // Your solution goes here\n    return 'Hello, World!';\n}\n\nconsole.log(solve());" }}`
+  };
+
+  // Initialize Monaco Editor
+  require.config({ 
+    paths: { 
+      vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' 
+    }
+  });
+
+  require(['vs/editor/editor.main'], function () {
+    const defaultLang = `{{ language|default:"python" }}`;
+    const initialCode = `{{ code|escapejs }}` || templates[defaultLang];
+    
+    console.log("🎯 Monaco Editor Initialization");
+    console.log("🏷️ Default language:", defaultLang);
+    console.log("📄 Initial code length:", initialCode.length);
+    console.log("🔧 Code preview:", initialCode.substring(0, 100) + (initialCode.length > 100 ? "..." : ""));
+    console.log("🎨 Theme:", currentTheme);
+    
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: initialCode,
+      language: defaultLang,
+      theme: currentTheme,
+      automaticLayout: true,
+      fontSize: 14,
+      fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace",
+      fontLigatures: true,
+      lineNumbers: 'on',
+      roundedSelection: false,
+      scrollBeyondLastLine: false,
+      readOnly: false,
+      minimap: { enabled: true },
+      folding: true,
+      wordWrap: 'on',
+      contextmenu: true,
+      mouseWheelZoom: true,
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      renderWhitespace: 'selection',
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      wordBasedSuggestions: true,
+      parameterHints: { enabled: true },
+      autoClosingBrackets: 'always',
+      autoClosingQuotes: 'always',
+      autoSurround: 'languageDefined',
+      formatOnPaste: true,
+      formatOnType: true
+    });
+
+    // Add custom keyboard shortcuts
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
+      console.log("⌨️ Keyboard shortcut: Ctrl+Enter (Run Code)");
+      const runBtn = document.querySelector('button[value="run"]');
+      if (runBtn) {
+        console.log("🏃 Triggering run button click");
+        runBtn.click();
+      } else {
+        console.warn("⚠️ Run button not found");
+      }
+    });
+    
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, function() {
+      console.log("⌨️ Keyboard shortcut: Ctrl+Shift+Enter (Submit Code)");
+      const submitBtn = document.querySelector('button[value="submit"]');
+      if (submitBtn) {
+        console.log("📝 Triggering submit button click");
+        submitBtn.click();
+      } else {
+        console.warn("⚠️ Submit button not found");
+      }
+    });
+
+    // Language change handler
+    const hiddenCode = document.getElementById("hiddenCode");
+    const hiddenLanguage = document.getElementById("hiddenLanguage");
+    const languageSelect = document.getElementById("languageSelect");
+
+    languageSelect.addEventListener("change", () => {
+      const selectedLang = languageSelect.value;
+      const currentCode = editor.getValue();
+      const newCode = templates[selectedLang] || "// Write your code here";
+      
+      console.log("🔄 Language change detected");
+      console.log("📋 Previous language:", hiddenLanguage.value);
+      console.log("🆕 New language:", selectedLang);
+      console.log("📝 Current code length:", currentCode.length);
+      console.log("🔤 Template code length:", newCode.length);
+      
+      // Create new model with proper language
+      const oldModel = editor.getModel();
+      const newModel = monaco.editor.createModel(newCode, selectedLang);
+      editor.setModel(newModel);
+      if (oldModel) oldModel.dispose();
+      
+      hiddenLanguage.value = selectedLang;
+      
+      console.log("✅ Language switch completed");
+      
+      // Show language change notification
+      showNotification(`Switched to ${selectedLang.toUpperCase()}`, 'info');
+    });
+
+    // Form submission handler
+    document.getElementById("codeForm").addEventListener("submit", function (e) {
+      // More robust way to detect which button was clicked
+      let action = 'run'; // default
+      
+      // Check data attribute first (most reliable)
+      const clickedAction = this.getAttribute('data-clicked-action');
+      if (clickedAction) {
+        action = clickedAction;
+        console.log("🎯 Action from data attribute:", action);
+      }
+      // Check if e.submitter is available (newer browsers)
+      else if (e.submitter && e.submitter.value) {
+        action = e.submitter.value;
+        console.log("🔍 Action from e.submitter:", action);
+      } else {
+        // Fallback: check which button was clicked
+        const runBtn = document.querySelector('button[value="run"]');
+        const submitBtn = document.querySelector('button[value="submit"]');
+        
+        if (document.activeElement === submitBtn) {
+          action = 'submit';
+          console.log("🔍 Action detected via activeElement: submit");
+        } else if (document.activeElement === runBtn) {
+          action = 'run';
+          console.log("🔍 Action detected via activeElement: run");
+        } else {
+          console.warn("⚠️ Could not detect action, defaulting to 'run'");
+        }
+      }
+      
+      const code = editor.getValue();
+      const language = document.getElementById("languageSelect").value;
+      const customInput = document.querySelector('textarea[name="input"]').value;
+      
+      console.log("🚀 Form submission started");
+      console.log("📝 FINAL ACTION:", action);
+      console.log("💻 Language:", language);
+      console.log("📄 Code length:", code.length);
+      console.log("📥 Custom input:", customInput ? `"${customInput}"` : "None");
+      console.log("🔧 Code preview:", code.substring(0, 100) + (code.length > 100 ? "..." : ""));
+      
+      hiddenCode.value = code;
+      
+      // Add a hidden input to ensure the action is sent correctly
+      let actionInput = document.getElementById('hiddenAction');
+      if (!actionInput) {
+        actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.id = 'hiddenAction';
+        document.getElementById('codeForm').appendChild(actionInput);
+      }
+      actionInput.value = action;
+      
+      console.log("🔧 Hidden action input set to:", action);
+      
+      // Add loading state to submit button
+      const submitBtn = e.submitter || document.activeElement;
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      
+      if (action === 'run') {
+        console.log("▶️ Running code...");
+        submitBtn.innerHTML = '<div class="loading-spinner me-2"></div>Running...';
+      } else if (action === 'submit') {
+        console.log("📤 Submitting solution...");
+        submitBtn.innerHTML = '<div class="loading-spinner me-2"></div>Submitting...';
+      }
+      
+      // Reset button after delay (will be reset on page reload anyway)
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }, 5000);
+    });
+
+    // Individual button click handlers for extra safety
+    const runButton = document.querySelector('button[value="run"]');
+    const submitButton = document.querySelector('button[value="submit"]');
+    
+    if (runButton) {
+      runButton.addEventListener('click', function(e) {
+        console.log("🔴 RUN BUTTON CLICKED DIRECTLY");
+        // Set a data attribute to track which button was clicked
+        document.getElementById('codeForm').setAttribute('data-clicked-action', 'run');
+      });
+    }
+    
+    if (submitButton) {
+      submitButton.addEventListener('click', function(e) {
+        console.log("🟢 SUBMIT BUTTON CLICKED DIRECTLY");
+        // Set a data attribute to track which button was clicked
+        document.getElementById('codeForm').setAttribute('data-clicked-action', 'submit');
+      });
+    }
+
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      const previousTheme = currentTheme;
+      currentTheme = currentTheme === 'vs-dark' ? 'vs-light' : 'vs-dark';
+      
+      console.log("🎨 Theme toggle clicked");
+      console.log("🔄 Previous theme:", previousTheme);
+      console.log("🆕 New theme:", currentTheme);
+      
+      monaco.editor.setTheme(currentTheme);
+      
+      const icon = themeToggle.querySelector('i');
+      const previousIcon = icon.className;
+      icon.className = currentTheme === 'vs-dark' ? 'bi bi-sun' : 'bi bi-moon';
+      
+      console.log("🎯 Icon changed from:", previousIcon, "to:", icon.className);
+      
+      showNotification(`Switched to ${currentTheme === 'vs-dark' ? 'dark' : 'light'} theme`, 'info');
+    });
+
+    // Fullscreen toggle
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const editorContainer = document.getElementById('editor').parentElement;
+    
+    fullscreenBtn.addEventListener('click', () => {
+      const wasFullscreen = !!document.fullscreenElement;
+      console.log("📺 Fullscreen button clicked");
+      console.log("📊 Current fullscreen state:", wasFullscreen);
+      
+      if (!document.fullscreenElement) {
+        console.log("🔄 Entering fullscreen mode");
+        editorContainer.requestFullscreen().then(() => {
+          console.log("✅ Successfully entered fullscreen");
+          editor.layout();
+          fullscreenBtn.querySelector('i').className = 'bi bi-fullscreen-exit';
+          console.log("🔧 Changed icon to exit fullscreen");
+        }).catch(err => {
+          console.error("❌ Failed to enter fullscreen:", err);
+        });
+      } else {
+        console.log("🔄 Exiting fullscreen mode");
+        document.exitFullscreen().then(() => {
+          console.log("✅ Successfully exited fullscreen");
+          editor.layout();
+          fullscreenBtn.querySelector('i').className = 'bi bi-fullscreen';
+          console.log("🔧 Changed icon to enter fullscreen");
+        }).catch(err => {
+          console.error("❌ Failed to exit fullscreen:", err);
+        });
+      }
+    });
+    
+    // Handle fullscreen change
+    document.addEventListener('fullscreenchange', () => {
+      const isFullscreen = !!document.fullscreenElement;
+      console.log("📺 Fullscreen state changed to:", isFullscreen);
+      console.log("📐 Triggering editor layout resize");
+      setTimeout(() => editor.layout(), 100);
+    });
+    
+    // Auto-save to localStorage
+    let saveTimeout;
+    editor.onDidChangeModelContent(() => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        const language = languageSelect.value;
+        const code = editor.getValue();
+        const key = `codecompiler_${language}_code`;
+        
+        console.log("💾 Auto-saving code");
+        console.log("🔑 Storage key:", key);
+        console.log("📝 Code length:", code.length);
+        
+        localStorage.setItem(key, code);
+        console.log("✅ Auto-save completed");
+      }, 1000);
+    });
+    
+    // Load saved code on language change
+    languageSelect.addEventListener('change', () => {
+      const selectedLang = languageSelect.value;
+      const savedCode = localStorage.getItem(`codecompiler_${selectedLang}_code`);
+      if (savedCode && savedCode.trim() !== templates[selectedLang].trim()) {
+        if (confirm('You have unsaved changes for this language. Would you like to restore them?')) {
+          editor.setValue(savedCode);
+        }
+      }
+    });
+  });
+
+  // Enhanced Leaderboard Modal
+  const modal = document.getElementById("leaderboardModal");
+  if (modal) {
+    console.log("🏆 Leaderboard modal found and initialized");
+    
+    modal.addEventListener("show.bs.modal", function () {
+      console.log("📊 Leaderboard modal opening");
+      
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const chartCanvas = document.getElementById("leaderboardChart");
+      const tableDiv = document.getElementById("leaderboardTable");
+      
+      // Show loading state
+      loadingSpinner.style.display = "block";
+      chartCanvas.style.display = "none";
+      tableDiv.innerHTML = "";
+      
+      console.log("🔄 Loading leaderboard data...");
+      
+      // Fetch leaderboard data
+      {% if problem %}
+      const url = "{% url 'leaderboard-data' problem.slug %}";
+      console.log("🌐 Fetching from:", url);
+      
+      fetch(url)
+        .then(res => {
+          console.log("📡 Response status:", res.status);
+          console.log("📡 Response ok:", res.ok);
+          
+          if (!res.ok) throw new Error("Failed to fetch leaderboard");
+          return res.json();
+        })
+        .then(data => {
+          console.log("📊 Leaderboard data received:", data);
+          console.log("👥 Number of entries:", data.data?.length || 0);
+          console.log("✅ Success status:", data.success);
+          
+          if (data.error) {
+            console.error("🚨 Server error:", data.error);
+          }
+          
+          loadingSpinner.style.display = "none";
+          
+          // Check if we have data
+          if (!data.data || data.data.length === 0) {
+            chartCanvas.style.display = "none";
+            tableDiv.innerHTML = `
+              <div class="text-center py-4">
+                <i class="bi bi-info-circle display-4 text-muted mb-3"></i>
+                <h5 class="text-muted">No Leaderboard Data</h5>
+                <p class="text-muted">No accepted submissions found for this problem yet.</p>
+                <p class="small text-muted">Submit a successful solution to appear on the leaderboard!</p>
+                {% if problem %}
+                <a href="/test-leaderboard/{{ problem.slug }}/" class="btn btn-outline-primary btn-sm mt-2" target="_blank">
+                  <i class="bi bi-plus-circle me-1"></i>Add Test Data (Debug)
+                </a>
+                {% endif %}
+              </div>`;
+            return;
+          }
+          
+          chartCanvas.style.display = "block";
+          
+          // Create chart
+          const ctx = chartCanvas.getContext('2d');
+          const labels = data.data.map(d => d.username);
+          const times = data.data.map(d => d.time_taken);
+          const bgColors = data.data.map(d =>
+            d.is_current_user ? 'rgba(255, 99, 132, 0.8)' : 'rgba(54, 162, 235, 0.6)'
+          );
+
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Time Taken (s)',
+                data: times,
+                backgroundColor: bgColors,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  titleColor: 'white',
+                  bodyColor: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  borderWidth: 1
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Time (seconds)',
+                    font: { weight: 'bold' }
+                  },
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              }
+            }
+          });
+
+          // Create table
+          const tableRows = data.data.map((r, i) => {
+            const isCurrentUser = r.is_current_user;
+            const rowClass = isCurrentUser ? 'table-warning' : '';
+            const userIcon = isCurrentUser ? '<i class="bi bi-person-fill me-1"></i>' : '';
+            return `
+              <tr class="${rowClass}">
+                <td class="fw-bold">${i + 1}</td>
+                <td>${userIcon}${r.username}${isCurrentUser ? ' <small>(You)</small>' : ''}</td>
+                <td><span class="badge bg-primary">${r.time_taken}s</span></td>
+                <td><span class="badge bg-success">${r.percentile}%</span></td>
+              </tr>`;
+          }).join("");
+
+          tableDiv.innerHTML = `
+            <div class="table-responsive">
+              <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                  <tr>
+                    <th><i class="bi bi-hash me-1"></i>Rank</th>
+                    <th><i class="bi bi-person me-1"></i>User</th>
+                    <th><i class="bi bi-clock me-1"></i>Time</th>
+                    <th><i class="bi bi-percent me-1"></i>Percentile</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+            </div>`;
+        })
+        .catch(err => {
+          console.error("❌ Leaderboard error:", err);
+          console.error("🔍 Error details:", err.message);
+          console.error("📍 Error stack:", err.stack);
+          
+          loadingSpinner.style.display = "none";
+          tableDiv.innerHTML = `
+            <div class="text-center py-4">
+              <i class="bi bi-exclamation-triangle display-4 text-muted mb-3"></i>
+              <p class="text-danger">Failed to load leaderboard data.</p>
+              <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Retry
+              </button>
+            </div>`;
+        });
+      {% endif %}
+    });
+  }
+
+  // Utility function for notifications
+  function showNotification(message, type = 'info') {
+    console.log("🔔 Showing notification:");
+    console.log("📝 Message:", message);
+    console.log("🎨 Type:", type);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+      <i class="bi bi-info-circle me-2"></i>${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    console.log("✅ Notification element created and added to DOM");
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        console.log("🗑️ Auto-removing notification after 3 seconds");
+        alertDiv.remove();
+      }
+    }, 3000);
+  }
+
+  // Add keyboard shortcuts info
+  const shortcutsInfo = document.createElement('div');
+  shortcutsInfo.className = 'position-fixed bottom-0 end-0 m-3 p-2 bg-dark text-white rounded small';
+  shortcutsInfo.style.cssText = 'z-index: 1000; opacity: 0.7; font-size: 0.8rem;';
+  shortcutsInfo.innerHTML = `
+    <div><strong>Shortcuts:</strong></div>
+    <div>Ctrl+Enter: Run Code</div>
+    <div>Ctrl+Shift+Enter: Submit</div>
+  `;
+  document.body.appendChild(shortcutsInfo);
+  
+  // Hide shortcuts info after 5 seconds
+  setTimeout(() => {
+    shortcutsInfo.style.opacity = '0';
+    shortcutsInfo.style.transition = 'opacity 0.5s';
+  }, 5000);
+});
+</script>
+{% endblock %}

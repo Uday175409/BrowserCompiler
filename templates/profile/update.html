@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% load static %}
+{% load page_assets %}
+
+{% block links %}
+{% load_page_css 'profile' %}
+<style>
+  .upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  
+  .image-upload-container:hover .upload-overlay {
+    opacity: 1;
+  }
+  
+  .file-size-info {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  
+  .error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+  
+  .success-message {
+    color: #059669;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="modern-card">
+        <div class="modern-card-header">
+          <h2 class="mb-0">
+            <i class="bi bi-person-gear me-2"></i>Update Profile
+          </h2>
+        </div>
+        
+        <div class="modern-card-body">
+          <!-- Display Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="POST" enctype="multipart/form-data" id="profileForm">
+            {% csrf_token %}
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-person me-2"></i>Username
+                </label>
+                <input type="text" name="username" value="{{ user.username }}" class="form-control" required />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-envelope me-2"></i>Email
+                </label>
+                <input type="email" name="email" value="{{ user.email }}" class="form-control" required />
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-telephone me-2"></i>Phone
+                </label>
+                <input type="text" name="phone" value="{{ user.phone }}" class="form-control" />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-person-badge me-2"></i>Gender
+                </label>
+                <select name="gender" class="form-select">
+                  <option value="">Select Gender</option>
+                  <option value="Male" {% if user.gender == "Male" %}selected{% endif %}>Male</option>
+                  <option value="Female" {% if user.gender == "Female" %}selected{% endif %}>Female</option>
+                  <option value="Other" {% if user.gender == "Other" %}selected{% endif %}>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="bi bi-calendar me-2"></i>Date of Birth
+              </label>
+              <input type="date" name="dob" value="{{ user.dob }}" class="form-control" />
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="bi bi-image me-2"></i>Profile Picture
+              </label>
+              <div class="text-center">
+                <div class="image-upload-container mb-3">
+                  {% if user.profile_pic %}
+                    <img
+                      id="preview"
+                      src="{{ user.profile_pic.url }}"
+                      alt="Profile Picture"
+                      class="rounded-circle border-3 border-primary object-fit-cover"
+                      style="width: 150px; height: 150px;"
+                    >
+                  {% else %}
+                    <div id="preview-placeholder" class="rounded-circle border-3 border-dashed border-secondary d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 150px;">
+                      <i class="bi bi-person-circle display-4 text-muted"></i>
+                    </div>
+                    <img
+                      id="preview"
+                      src=""
+                      alt="Preview"
+                      class="rounded-circle border-3 border-primary object-fit-cover d-none"
+                      style="width: 150px; height: 150px;"
+                    >
+                  {% endif %}
+                  <div class="upload-overlay">
+                    <i class="bi bi-camera-fill text-white fs-3"></i>
+                  </div>
+                </div>
+                
+                <input 
+                  type="file" 
+                  name="profile_pic" 
+                  id="profilePicInput"
+                  class="form-control" 
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+                  onchange="validateAndPreviewImage(this)"
+                >
+                
+                <div class="file-size-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Maximum size: 5MB | Supported formats: JPG, PNG, GIF, WEBP | Recommended: 800x800px
+                </div>
+                
+                <div id="imageError" class="error-message d-none"></div>
+                <div id="imageSuccess" class="success-message d-none"></div>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-modern-primary btn-lg me-3" id="saveBtn">
+                <i class="bi bi-check-circle me-2"></i>Save Changes
+              </button>
+              <a href="{% url 'profile-page' %}" class="btn btn-modern-secondary btn-lg">
+                <i class="bi bi-x-circle me-2"></i>Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Enhanced Image Validation Script -->
+<script>
+function validateAndPreviewImage(input) {
+  const file = input.files[0];
+  const preview = document.getElementById('preview');
+  const placeholder = document.getElementById('preview-placeholder');
+  const errorDiv = document.getElementById('imageError');
+  const successDiv = document.getElementById('imageSuccess');
+  const saveBtn = document.getElementById('saveBtn');
+  
+  // Reset messages
+  errorDiv.classList.add('d-none');
+  successDiv.classList.add('d-none');
+  
+  if (!file) {
+    if (placeholder) {
+      placeholder.classList.remove('d-none');
+      preview.classList.add('d-none');
+    }
+    return;
+  }
+  
+  // Validate file size (5MB limit)
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  if (file.size > maxSize) {
+    showError(`File size too large! Maximum allowed: 5MB. Your file: ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
+    input.value = '';
+    return;
+  }
+  
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    showError('Invalid file type! Please upload JPG, PNG, GIF, or WEBP images only.');
+    input.value = '';
+    return;
+  }
+  
+  // Create image to check dimensions
+  const img = new Image();
+  img.onload = function() {
+    const width = this.naturalWidth;
+    const height = this.naturalHeight;
+    
+    // Check dimensions (recommended max: 2000x2000)
+    if (width > 2000 || height > 2000) {
+      showError(`Image dimensions too large! Maximum recommended: 2000x2000px. Your image: ${width}x${height}px. The image will be automatically resized.`);
+    } else if (width < 100 || height < 100) {
+      showError(`Image dimensions too small! Minimum recommended: 100x100px. Your image: ${width}x${height}px`);
+      input.value = '';
+      return;
+    } else {
+      showSuccess(`Image looks good! Dimensions: ${width}x${height}px, Size: ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
+    }
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.classList.remove('d-none');
+      if (placeholder) {
+        placeholder.classList.add('d-none');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  img.onerror = function() {
+    showError('Invalid image file! Please select a valid image.');
+    input.value = '';
+  };
+  
+  // Load image to check dimensions
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById('imageError');
+  const successDiv = document.getElementById('imageSuccess');
+  
+  errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + message;
+  errorDiv.classList.remove('d-none');
+  successDiv.classList.add('d-none');
+}
+
+function showSuccess(message) {
+  const errorDiv = document.getElementById('imageError');
+  const successDiv = document.getElementById('imageSuccess');
+  
+  successDiv.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + message;
+  successDiv.classList.remove('d-none');
+  errorDiv.classList.add('d-none');
+}
+
+// Form submission validation
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+  const fileInput = document.getElementById('profilePicInput');
+  const errorDiv = document.getElementById('imageError');
+  
+  // Check if there's an error showing
+  if (!errorDiv.classList.contains('d-none')) {
+    e.preventDefault();
+    alert('Please fix the image upload errors before submitting.');
+    return false;
+  }
+  
+  // Add loading state to save button
+  const saveBtn = document.getElementById('saveBtn');
+  const originalContent = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Saving...';
+  
+  // Note: The form will submit normally, this is just for UI feedback
+  // The button will be re-enabled when the page reloads
+});
+
+// Drag and drop functionality
+const imageContainer = document.querySelector('.image-upload-container');
+const fileInput = document.getElementById('profilePicInput');
+
+imageContainer.addEventListener('click', function() {
+  fileInput.click();
+});
+
+imageContainer.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.style.opacity = '0.8';
+});
+
+imageContainer.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  this.style.opacity = '1';
+});
+
+imageContainer.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.style.opacity = '1';
+  
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    fileInput.files = files;
+    validateAndPreviewImage(fileInput);
+  }
+});
+{% load_page_js 'profile' %}
+</script>
+{% endblock %}

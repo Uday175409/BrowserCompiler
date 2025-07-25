@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% load page_assets %}
+
+{% block title %}Problems - CodeCompiler{% endblock %}
+
+{% block links %}
+{% load_page_css 'problems' %}
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="display-5 fw-bold mb-2">
+        <i class="bi bi-puzzle text-primary me-2"></i>
+        Coding Problems
+      </h1>
+      <p class="lead text-muted">Challenge yourself with our curated collection of programming problems</p>
+    </div>
+    <div class="d-flex gap-2">
+      <select class="form-select" id="difficultyFilter" style="width: auto;">
+        <option value="">All Difficulties</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+      <button class="btn btn-outline-primary" id="sortBtn">
+        <i class="bi bi-sort-alpha-down me-1"></i>Sort
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-list-task text-primary fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ problems|length }}</h4>
+          <p class="text-muted small mb-0">Total Problems</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-check-circle text-success fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ easy_count|default:0 }}</h4>
+          <p class="text-muted small mb-0">Easy</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-dash-circle text-warning fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ medium_count|default:0 }}</h4>
+          <p class="text-muted small mb-0">Medium</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="modern-card text-center">
+        <div class="modern-card-body">
+          <i class="bi bi-x-circle text-danger fs-2 mb-2"></i>
+          <h4 class="fw-bold">{{ hard_count|default:0 }}</h4>
+          <p class="text-muted small mb-0">Hard</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problems Grid -->
+  <div class="row" id="problemsContainer">
+    {% for problem in problems %}
+      <div class="col-md-6 col-lg-4 mb-4 problem-item" data-difficulty="{{ problem.difficulty }}">
+        <div class="problem-card h-100">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <h5 class="fw-bold mb-0 flex-grow-1">{{ problem.title }}</h5>
+            <span class="difficulty-badge difficulty-{{ problem.difficulty|lower }} ms-2">
+              {{ problem.difficulty }}
+            </span>
+          </div>
+          
+          {% if problem.statement %}
+          <p class="text-muted mb-3">
+            {{ problem.statement|truncatewords:20 }}
+          </p>
+          {% endif %}
+          
+          {% if problem.tags %}
+          <div class="mb-3">
+            {% for tag in problem.tags|split:"," %}
+            <span class="badge bg-light text-dark me-1 mb-1"># {{ tag|trim }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
+          <div class="d-flex justify-content-between align-items-center mt-auto">
+            <a href="{% url 'compile_with_problem' slug=problem.slug %}" class="btn btn-modern-primary">
+              <i class="bi bi-play-fill me-1"></i>Solve Now
+            </a>
+            <div class="text-muted small">
+              <i class="bi bi-eye me-1"></i>Problem #{{ problem.id }}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="modern-card text-center">
+          <div class="modern-card-body py-5">
+            <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+            <h4 class="fw-bold mb-3">No Problems Available</h4>
+            <p class="text-muted">Check back later for new coding challenges!</p>
+            <a href="{% url 'compile' %}" class="btn btn-modern-primary">
+              <i class="bi bi-code-slash me-2"></i>Try Free Compiler
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Quick Start Guide -->
+  {% if not user.is_authenticated %}
+  <div class="mt-5">
+    <div class="modern-card">
+      <div class="modern-card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="fw-bold mb-3">
+              <i class="bi bi-info-circle text-primary me-2"></i>
+              New to CodeCompiler?
+            </h4>
+            <p class="text-muted mb-3">
+              Sign up to track your progress, save solutions, and compete with other developers on our leaderboard.
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <a href="{% url 'auth-page' %}" class="btn btn-modern-primary">
+              <i class="bi bi-person-plus me-2"></i>Get Started Free
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const difficultyFilter = document.getElementById('difficultyFilter');
+    const sortBtn = document.getElementById('sortBtn');
+    const problemsContainer = document.getElementById('problemsContainer');
+    const problemItems = Array.from(document.querySelectorAll('.problem-item'));
+    
+    let isAscending = true;
+    
+    // Filter by difficulty
+    difficultyFilter.addEventListener('change', function() {
+        const selectedDifficulty = this.value;
+        
+        problemItems.forEach(item => {
+            const itemDifficulty = item.dataset.difficulty;
+            if (selectedDifficulty === '' || itemDifficulty === selectedDifficulty) {
+                item.style.display = 'block';
+                item.classList.add('animate-fade-in-up');
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Sort functionality
+    sortBtn.addEventListener('click', function() {
+        const visibleItems = problemItems.filter(item => item.style.display !== 'none');
+        
+        visibleItems.sort((a, b) => {
+            const titleA = a.querySelector('h5').textContent.trim();
+            const titleB = b.querySelector('h5').textContent.trim();
+            
+            if (isAscending) {
+                return titleA.localeCompare(titleB);
+            } else {
+                return titleB.localeCompare(titleA);
+            }
+        });
+        
+        // Update sort button icon
+        const icon = sortBtn.querySelector('i');
+        icon.className = isAscending ? 'bi bi-sort-alpha-up me-1' : 'bi bi-sort-alpha-down me-1';
+        
+        // Re-append sorted items
+        visibleItems.forEach(item => problemsContainer.appendChild(item));
+        
+        isAscending = !isAscending;
+    });
+    
+    // Add hover effects
+    problemItems.forEach(item => {
+        const card = item.querySelector('.problem-card');
+        
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'problems' %}
+{% endblock %}
