@@ -60,7 +60,7 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'problems_list' %}">
+              <a class="nav-link" href="{% url 'problems' %}">
                 <i class="bi bi-puzzle me-1"></i>Problems
               </a>
             </li>
@@ -77,6 +77,11 @@
             <li class="nav-item">
               <a class="nav-link" href="{% url 'contact' %}">
                 <i class="bi bi-envelope me-1"></i>Contact
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-warning" href="{% url 'admin-problem-insert' %}">
+                <i class="bi bi-shield-lock me-1"></i>Admin
               </a>
             </li>
           </ul>
@@ -172,7 +177,7 @@
             <h6 class="mb-3">Platform</h6>
             <ul class="list-unstyled">
               <li><a href="{% url 'compile' %}" class="text-muted text-decoration-none">Compiler</a></li>
-              <li><a href="{% url 'problems_list' %}" class="text-muted text-decoration-none">Problems</a></li>
+              <li><a href="{% url 'problems' %}" class="text-muted text-decoration-none">Problems</a></li>
               <li><a href="{% url 'history' %}" class="text-muted text-decoration-none">History</a></li>
             </ul>
           </div>
@@ -189,7 +194,7 @@
               <span class="badge bg-primary">Python</span>
               <span class="badge bg-primary">C++</span>
               <span class="badge bg-primary">Java</span>
-              <span class="badge bg-primary">JavaScript</span>
+              <span class="badge bg-primary">C</span>
             </div>
           </div>
         </div>

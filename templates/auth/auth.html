@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
+{% load page_assets %}
 
 {% block title %}Join CodeCompiler - Start Your Coding Journey{% endblock %}
+
+{% block links %}
+{% load_page_css 'auth' %}
+{% endblock %}
 
 {% block body %}
 <div class="auth-wrapper">
@@ -229,143 +234,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
-<style>
-.auth-wrapper {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 2rem 0;
-  display: flex;
-  align-items: center;
-}
-
-.auth-form {
-  transition: all 0.3s ease;
-}
-
-.input-group-text {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-  border: none;
-  color: white;
-}
-
-.form-control:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.form-select:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.btn-check:checked + .btn-outline-primary {
-  background: var(--primary-gradient);
-  border-color: var(--primary-color);
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const loginToggle = document.getElementById('loginToggle');
-  const registerToggle = document.getElementById('registerToggle');
-  const loginForm = document.getElementById('loginForm');
-  const registerForm = document.getElementById('registerForm');
-  const switchToRegister = document.getElementById('switchToRegister');
-  const switchToLogin = document.getElementById('switchToLogin');
-
-  function showLogin() {
-    loginForm.style.display = 'block';
-    registerForm.style.display = 'none';
-    loginToggle.checked = true;
-    loginForm.classList.add('animate-fade-in-up');
-  }
-
-  function showRegister() {
-    loginForm.style.display = 'none';
-    registerForm.style.display = 'block';
-    registerToggle.checked = true;
-    registerForm.classList.add('animate-fade-in-up');
-  }
-
-  loginToggle.addEventListener('change', function() {
-    if (this.checked) showLogin();
-  });
-
-  registerToggle.addEventListener('change', function() {
-    if (this.checked) showRegister();
-  });
-
-  switchToRegister.addEventListener('click', function(e) {
-    e.preventDefault();
-    showRegister();
-  });
-
-  switchToLogin.addEventListener('click', function(e) {
-    e.preventDefault();
-    showLogin();
-  });
-
-  // Password visibility toggle
-  const togglePassword = document.getElementById('togglePassword');
-  const toggleRegisterPassword = document.getElementById('toggleRegisterPassword');
-
-  if (togglePassword) {
-    togglePassword.addEventListener('click', function() {
-      const passwordInput = this.parentElement.querySelector('input');
-      const icon = this.querySelector('i');
-      
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        icon.className = 'bi bi-eye-slash';
-      } else {
-        passwordInput.type = 'password';
-        icon.className = 'bi bi-eye';
-      }
-    });
-  }
-
-  if (toggleRegisterPassword) {
-    toggleRegisterPassword.addEventListener('click', function() {
-      const passwordInput = this.parentElement.querySelector('input');
-      const icon = this.querySelector('i');
-      
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        icon.className = 'bi bi-eye-slash';
-      } else {
-        passwordInput.type = 'password';
-        icon.className = 'bi bi-eye';
-      }
-    });
-  }
-
-  // Form validation for register
-  const registerFormEl = document.querySelector('#registerForm form');
-  if (registerFormEl) {
-    registerFormEl.addEventListener('submit', function(e) {
-      const password = this.querySelector('input[name="password"]').value;
-      const agreeTerms = this.querySelector('#agreeTerms').checked;
-      
-      if (password.length < 8) {
-        e.preventDefault();
-        alert('Password must be at least 8 characters long.');
-        return;
-      }
-      
-      if (!agreeTerms) {
-        e.preventDefault();
-        alert('Please agree to the Terms of Service and Privacy Policy.');
-        return;
-      }
-    });
-  }
-
-  // Auto-focus on first input
-  setTimeout(() => {
-    const firstInput = document.querySelector('#loginForm input[name="username"]');
-    if (firstInput) firstInput.focus();
-  }, 100);
-});
-</script>
+{% block scripts %}
+{% load_page_js 'auth' %}
 {% endblock %}

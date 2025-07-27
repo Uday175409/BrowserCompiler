@@ -191,18 +191,20 @@
                 <div class="d-flex align-items-center gap-3">
                   <label class="text-white small fw-bold">Language:</label>
                   <select id="languageSelect" class="form-select form-select-sm language-selector">
-                    <option value="python" {% if language == "python" %}selected{% endif %}>
+                    <option class="language-dark" value="python" {% if language == "python" %}selected{% endif %}>
                       <i class="bi bi-filetype-py"></i> Python
                     </option>
-                    <option value="cpp" {% if language == "cpp" %}selected{% endif %}>
-                      <i class="bi bi-code-square"></i> C++
-                    </option>
-                    <option value="java" {% if language == "java" %}selected{% endif %}>
+                    <option class="language-dark" value="java" {% if language == "java" %}selected{% endif %}>
                       <i class="bi bi-cup-hot"></i> Java
                     </option>
-                    <option value="javascript" {% if language == "javascript" %}selected{% endif %}>
-                      <i class="bi bi-filetype-js"></i> JavaScript
+                    <option class="language-dark" value="c" {% if language == "c" %}selected{% endif %}>
+                      <i class="bi bi-code"></i> C
                     </option>
+                    <option class="language-dark" value="cpp" {% if language == "cpp" %}selected{% endif %}>
+                      <i class="bi bi-code-square"></i> C++
+                    </option>
+                    
+                    
                   </select>
                 </div>
               </div>
@@ -253,7 +255,7 @@
       {% endif %}
 
       {% if action == 'run' and run_results %}
-      <div class="modern-card mt-4 animate-fade-in-up">
+      <div class="modern-card mt-4 animate-fade-in-up" id="test-results-container">
         <div class="modern-card-header bg-primary">
           <h5 class="mb-0">
             <i class="bi bi-check-square me-2"></i>Test Results
@@ -261,7 +263,8 @@
         </div>
         <div class="modern-card-body">
           {% for result in run_results %}
-          <div class="test-case-result test-case-{% if result.passed %}passed{% else %}failed{% endif %}">
+          <div class="test-case-result test-case-{% if result.passed %}passed{% else %}failed{% endif %}" 
+               data-case-number="{{ forloop.counter }}">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <strong>Test Case {{ forloop.counter }}</strong>
               {% if result.passed %}
@@ -292,7 +295,7 @@
             <h3 class="fw-bold text-success mb-3">Congratulations! 🎉</h3>
             <p class="lead">All {{ total_cases }} test cases passed!</p>
             <div class="d-flex justify-content-center gap-3 mt-4">
-              <a href="{% url 'problems_list' %}" class="btn btn-modern-primary">
+              <a href="{% url 'problems' %}" class="btn btn-modern-primary">
                 <i class="bi bi-arrow-left me-2"></i>Back to Problems
               </a>
               <button class="btn btn-modern-secondary" data-bs-toggle="modal" data-bs-target="#leaderboardModal">
@@ -409,9 +412,131 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 
 <script>
+// Bootstrap Dropdown Implementation for Language Selector
+function initializeBootstrapDropdown() {
+  console.log('🔍 Starting Bootstrap dropdown initialization...');
+  
+  const originalSelect = document.getElementById('languageSelect');
+  console.log('📍 Original select element found:', !!originalSelect);
+  
+  if (!originalSelect) {
+    console.log('❌ Original language select not found');
+    return;
+  }
+  
+  console.log('📝 Original select value:', originalSelect.value);
+  console.log('📋 Original select options:', Array.from(originalSelect.options).map(o => o.value));
+  
+  // Don't replace if already replaced
+  if (originalSelect.style.display === 'none') {
+    console.log('⚠️ Bootstrap dropdown already initialized');
+    return;
+  }
+  
+  console.log('🔧 Initializing Bootstrap dropdown...');
+  
+  const languages = [
+    { value: 'python', label: 'Python', icon: 'bi-filetype-py' },
+    { value: 'cpp', label: 'C++', icon: 'bi-code-square' },
+    { value: 'java', label: 'Java', icon: 'bi-cup-hot' },
+    { value: 'c', label: 'C', icon: 'bi-code' }
+  ];
+  
+  const currentValue = originalSelect.value;
+  const currentLanguage = languages.find(lang => lang.value === currentValue) || languages[0];
+  
+  console.log('🎯 Current language:', currentLanguage);
+  
+  // Create Bootstrap dropdown HTML
+  const dropdownWrapper = document.createElement('div');
+  dropdownWrapper.className = 'dropdown';
+  dropdownWrapper.innerHTML = `
+    <button class="btn btn-outline-light dropdown-toggle" type="button" id="languageDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 140px; text-align: left;">
+      <i class="bi ${currentLanguage.icon} me-2"></i>${currentLanguage.label}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="languageDropdownButton">
+      ${languages.map(lang => `
+        <li>
+          <a class="dropdown-item ${lang.value === currentValue ? 'active' : ''}" href="#" data-value="${lang.value}">
+            <i class="bi ${lang.icon} me-2"></i>${lang.label}
+          </a>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  
+  // Insert dropdown in the same container as original
+  const container = originalSelect.parentElement;
+  console.log('📦 Container element:', container);
+  console.log('📦 Container class:', container.className);
+  
+  // Replace the original select completely
+  console.log('🔄 Replacing original select with Bootstrap dropdown...');
+  container.replaceChild(dropdownWrapper, originalSelect);
+  console.log('✅ Original select replaced');
+  
+  // Create a hidden select for form submission
+  const hiddenSelect = document.createElement('select');
+  hiddenSelect.id = 'languageSelect';
+  hiddenSelect.name = originalSelect.name;
+  hiddenSelect.style.display = 'none';
+  languages.forEach(lang => {
+    const option = document.createElement('option');
+    option.value = lang.value;
+    option.textContent = lang.label;
+    if (lang.value === currentValue) option.selected = true;
+    hiddenSelect.appendChild(option);
+  });
+  container.appendChild(hiddenSelect);
+  
+  console.log('📦 Bootstrap dropdown HTML created and inserted');
+  
+  // Get elements
+  const button = dropdownWrapper.querySelector('#languageDropdownButton');
+  const menuItems = dropdownWrapper.querySelectorAll('.dropdown-item');
+  
+  console.log('🎛️ Adding event listeners...');
+  
+  // Handle item selection
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const value = item.dataset.value;
+      const language = languages.find(lang => lang.value === value);
+      
+      console.log('✅ Language selected:', language);
+      
+      // Update button content
+      button.innerHTML = `<i class="bi ${language.icon} me-2"></i>${language.label}`;
+      
+      // Update active state
+      menuItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      
+      // Update hidden select value
+      hiddenSelect.value = value;
+      
+      // Trigger change event on hidden select
+      hiddenSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      console.log(`🔄 Language changed to: ${language.label}`);
+    });
+  });
+  
+  console.log('✅ Bootstrap language dropdown initialized successfully');
+}
+
 // Enhanced Monaco Editor with modern features
 document.addEventListener("DOMContentLoaded", function () {
   console.log("🚀 Document loaded, initializing Monaco Editor");
+  
+  // ✅ Initialize Bootstrap Language Dropdown FIRST (before any references to languageSelect)
+  // Add a small delay to ensure DOM is fully rendered
+  setTimeout(() => {
+    initializeBootstrapDropdown();
+  }, 100);
   console.log("⏰ Timestamp:", new Date().toISOString());
   console.log("🌐 User Agent:", navigator.userAgent);
   console.log("📱 Screen size:", window.screen.width + "x" + window.screen.height);
@@ -425,7 +550,7 @@ document.addEventListener("DOMContentLoaded", function () {
     python: `{{ starter_codes.python|escapejs|default:"# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)" }}`,
     cpp: `{{ starter_codes.cpp|escapejs|default:"#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << \"Hello, World!\" << endl;\n    return 0;\n}" }}`,
     java: `{{ starter_codes.java|escapejs|default:"public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println(\"Hello, World!\");\n    }\n}" }}`,
-    javascript: `{{ starter_codes.javascript|escapejs|default:"// Your JavaScript code here\nfunction solve() {\n    // Your solution goes here\n    return 'Hello, World!';\n}\n\nconsole.log(solve());" }}`
+    c: `{{ starter_codes.c|escapejs|default:"#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf(\"Hello, World!\\n\");\n    return 0;\n}" }}`
   };
 
   // Initialize Monaco Editor
@@ -706,9 +831,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }, 1000);
     });
     
+    // IMPORTANT: After custom dropdown is initialized, languageSelect refers to the hidden select
     // Load saved code on language change
-    languageSelect.addEventListener('change', () => {
-      const selectedLang = languageSelect.value;
+    const hiddenLanguageSelect = document.getElementById('languageSelect'); // Get the hidden select after custom dropdown
+    hiddenLanguageSelect.addEventListener('change', () => {
+      const selectedLang = hiddenLanguageSelect.value;
       const savedCode = localStorage.getItem(`codecompiler_${selectedLang}_code`);
       if (savedCode && savedCode.trim() !== templates[selectedLang].trim()) {
         if (confirm('You have unsaved changes for this language. Would you like to restore them?')) {

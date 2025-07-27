@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin - Insert Problem{% endblock %}
+
+{% block links %}
+<style>
+  .admin-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .admin-card {
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+  
+  .admin-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 1.5rem;
+  }
+  
+  .form-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .form-section:last-child {
+    border-bottom: none;
+  }
+  
+  .section-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .code-textarea {
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    background: #1a1a1a;
+    color: #e2e8f0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    min-height: 200px;
+  }
+  
+  .code-textarea:focus {
+    background: #1a1a1a;
+    color: #e2e8f0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+  }
+  
+  .test-case-group {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: rgba(var(--primary-rgb), 0.05);
+  }
+  
+  .btn-add-case {
+    background: var(--success-color);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  
+  .btn-remove-case {
+    background: var(--danger-color);
+    border: none;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+  
+  .auth-form {
+    max-width: 400px;
+    margin: 5rem auto;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow-lg);
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+  {% if not authenticated %}
+  <!-- Authentication Form -->
+  <div class="auth-form">
+    <div class="text-center mb-4">
+      <i class="bi bi-shield-lock display-1 text-warning mb-3"></i>
+      <h2 class="fw-bold">Admin Access Required</h2>
+      <p class="text-muted">Enter the admin password to access the problem insertion panel.</p>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="password" class="form-label fw-bold">
+          <i class="bi bi-key me-2"></i>Admin Password
+        </label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+      <button type="submit" name="action" value="authenticate" class="btn btn-warning w-100">
+        <i class="bi bi-unlock me-2"></i>Access Admin Panel
+      </button>
+    </form>
+  </div>
+  {% else %}
+  <!-- Problem Insertion Form -->
+  <div class="admin-container">
+    <div class="admin-card">
+      <div class="admin-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="mb-1">
+              <i class="bi bi-plus-circle me-2"></i>Insert New Problem
+            </h1>
+            <p class="mb-0 opacity-75">Add a new coding problem to the database</p>
+          </div>
+          <a href="{% url 'problems' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-2"></i>Back to Problems
+          </a>
+        </div>
+      </div>
+
+      {% if success %}
+      <div class="alert alert-success m-3">
+        <i class="bi bi-check-circle me-2"></i>{{ success }}
+      </div>
+      {% endif %}
+
+      {% if error %}
+      <div class="alert alert-danger m-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" id="problemForm">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="bi bi-info-circle"></i>Basic Information
+          </h3>
+          <div class="row">
+            <div class="col-md-8">
+              <label for="title" class="form-label fw-bold">Problem Title</label>
+              <input type="text" class="form-control" id="title" name="title" required placeholder="e.g., Two Sum">
+            </div>
+            <div class="col-md-4">
+              <label for="difficulty" class="form-label fw-bold">Difficulty</label>
+              <select class="form-select" id="difficulty" name="difficulty" required>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="tags" class="form-label fw-bold">Tags (comma-separated)</label>
+            <input type="text" class="form-control" id="tags" name="tags" placeholder="e.g., Array, Hash Table, Two Pointers">
+          </div>
+        </div>
+
+        <!-- Problem Statement -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="bi bi-file-text"></i>Problem Statement
+          </h3>
+          <div class="mb-3">
+            <label for="statement" class="form-label fw-bold">Problem Description</label>
+            <textarea class="form-control" id="statement" name="statement" rows="6" required 
+                      placeholder="Describe the problem clearly with examples..."></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <label for="input_format" class="form-label fw-bold">Input Format</label>
+              <textarea class="form-control" id="input_format" name="input_format" rows="3" 
+                        placeholder="Describe the input format..."></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="output_format" class="form-label fw-bold">Output Format</label>
+              <textarea class="form-control" id="output_format" name="output_format" rows="3" 
+                        placeholder="Describe the expected output format..."></textarea>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="constraints" class="form-label fw-bold">Constraints</label>
+            <textarea class="form-control" id="constraints" name="constraints" rows="3" 
+                      placeholder="e.g., 1 <= nums.length <= 10^4"></textarea>
+          </div>
+        </div>
+
+        <!-- Starter Code -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="bi bi-code-slash"></i>Starter Code Templates
+          </h3>
+          <div class="row">
+            <div class="col-md-6">
+              <label for="python_code" class="form-label fw-bold">Python Template</label>
+              <textarea class="form-control code-textarea" id="python_code" name="python_code" 
+                        placeholder="def solution(nums):&#10;    # Your code here&#10;    pass"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="java_code" class="form-label fw-bold">Java Template</label>
+              <textarea class="form-control code-textarea" id="java_code" name="java_code" 
+                        placeholder="public class Solution {&#10;    public int[] solution(int[] nums) {&#10;        // Your code here&#10;        return new int[]{};&#10;    }&#10;}"></textarea>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <label for="cpp_code" class="form-label fw-bold">C++ Template</label>
+              <textarea class="form-control code-textarea" id="cpp_code" name="cpp_code" 
+                        placeholder="#include &lt;vector&gt;&#10;using namespace std;&#10;&#10;class Solution {&#10;public:&#10;    vector&lt;int&gt; solution(vector&lt;int&gt;&amp; nums) {&#10;        // Your code here&#10;        return {};&#10;    }&#10;};"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="c_code" class="form-label fw-bold">C Template</label>
+              <textarea class="form-control code-textarea" id="c_code" name="c_code" 
+                        placeholder="#include &lt;stdio.h&gt;&#10;#include &lt;stdlib.h&gt;&#10;&#10;int* solution(int* nums, int numsSize, int* returnSize) {&#10;    // Your code here&#10;    *returnSize = 0;&#10;    return NULL;&#10;}"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Examples -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="bi bi-lightbulb"></i>Examples
+            <button type="button" class="btn btn-add-case btn-sm ms-auto" onclick="addExample()">
+              <i class="bi bi-plus"></i>Add Example
+            </button>
+          </h3>
+          <div id="examples-container">
+            <div class="test-case-group">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Example 1</strong>
+                <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">Input</label>
+                  <textarea class="form-control" name="example_input[]" rows="2" required 
+                            placeholder='{"nums": [2,7,11,15], "target": 9}'></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Expected Output</label>
+                  <textarea class="form-control" name="example_output[]" rows="2" required 
+                            placeholder='[0,1]'></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Cases -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="bi bi-check-square"></i>Test Cases
+            <button type="button" class="btn btn-add-case btn-sm ms-auto" onclick="addTestCase()">
+              <i class="bi bi-plus"></i>Add Test Case
+            </button>
+          </h3>
+          <div id="testcases-container">
+            <div class="test-case-group">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Test Case 1</strong>
+                <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">Input Data</label>
+                  <textarea class="form-control" name="testcase_input[]" rows="2" required 
+                            placeholder='{"nums": [2,7,11,15], "target": 9}'></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Expected Output</label>
+                  <textarea class="form-control" name="testcase_output[]" rows="2" required 
+                            placeholder='[0,1]'></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-section">
+          <div class="d-flex gap-3">
+            <button type="submit" name="action" value="insert" class="btn btn-success btn-lg">
+              <i class="bi bi-plus-circle me-2"></i>Insert Problem
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+              <i class="bi bi-arrow-clockwise me-2"></i>Reset Form
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let exampleCount = 1;
+let testCaseCount = 1;
+
+function addExample() {
+  exampleCount++;
+  const container = document.getElementById('examples-container');
+  const newExample = document.createElement('div');
+  newExample.className = 'test-case-group';
+  newExample.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Example ${exampleCount}</strong>
+      <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-label">Input</label>
+        <textarea class="form-control" name="example_input[]" rows="2" required></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Expected Output</label>
+        <textarea class="form-control" name="example_output[]" rows="2" required></textarea>
+      </div>
+    </div>
+  `;
+  container.appendChild(newExample);
+}
+
+function addTestCase() {
+  testCaseCount++;
+  const container = document.getElementById('testcases-container');
+  const newTestCase = document.createElement('div');
+  newTestCase.className = 'test-case-group';
+  newTestCase.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Test Case ${testCaseCount}</strong>
+      <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-label">Input Data</label>
+        <textarea class="form-control" name="testcase_input[]" rows="2" required></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Expected Output</label>
+        <textarea class="form-control" name="testcase_output[]" rows="2" required></textarea>
+      </div>
+    </div>
+  `;
+  container.appendChild(newTestCase);
+}
+
+function removeTestCase(button) {
+  const container = button.closest('.test-case-group');
+  container.remove();
+  
+  // Renumber remaining test cases
+  const examplesContainer = document.getElementById('examples-container');
+  const testCasesContainer = document.getElementById('testcases-container');
+  
+  if (examplesContainer.contains(container)) {
+    const examples = examplesContainer.querySelectorAll('.test-case-group');
+    examples.forEach((example, index) => {
+      const title = example.querySelector('strong');
+      title.textContent = `Example ${index + 1}`;
+    });
+    exampleCount = examples.length;
+  } else {
+    const testCases = testCasesContainer.querySelectorAll('.test-case-group');
+    testCases.forEach((testCase, index) => {
+      const title = testCase.querySelector('strong');
+      title.textContent = `Test Case ${index + 1}`;
+    });
+    testCaseCount = testCases.length;
+  }
+}
+
+function resetForm() {
+  if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
+    document.getElementById('problemForm').reset();
+    
+    // Reset examples and test cases to just one each
+    document.getElementById('examples-container').innerHTML = `
+      <div class="test-case-group">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong>Example 1</strong>
+          <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label">Input</label>
+            <textarea class="form-control" name="example_input[]" rows="2" required></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Expected Output</label>
+            <textarea class="form-control" name="example_output[]" rows="2" required></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('testcases-container').innerHTML = `
+      <div class="test-case-group">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong>Test Case 1</strong>
+          <button type="button" class="btn btn-remove-case" onclick="removeTestCase(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label">Input Data</label>
+            <textarea class="form-control" name="testcase_input[]" rows="2" required></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Expected Output</label>
+            <textarea class="form-control" name="testcase_output[]" rows="2" required></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    exampleCount = 1;
+    testCaseCount = 1;
+  }
+}
+
+// Auto-save form data to localStorage
+function saveFormData() {
+  const formData = new FormData(document.getElementById('problemForm'));
+  const data = {};
+  for (let [key, value] of formData.entries()) {
+    data[key] = value;
+  }
+  localStorage.setItem('admin_problem_form', JSON.stringify(data));
+}
+
+// Load form data from localStorage
+function loadFormData() {
+  const saved = localStorage.getItem('admin_problem_form');
+  if (saved) {
+    const data = JSON.parse(saved);
+    for (let [key, value] of Object.entries(data)) {
+      const field = document.querySelector(`[name="${key}"]`);
+      if (field) field.value = value;
+    }
+  }
+}
+
+// Auto-save on form change
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('problemForm');
+  if (form) {
+    loadFormData();
+    form.addEventListener('input', saveFormData);
+    
+    // Clear saved data on successful submit
+    form.addEventListener('submit', function() {
+      setTimeout(() => {
+        localStorage.removeItem('admin_problem_form');
+      }, 1000);
+    });
+  }
+});
+</script>
+{% endblock %}

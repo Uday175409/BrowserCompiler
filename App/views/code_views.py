@@ -4,6 +4,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.contrib.admin.views.decorators import staff_member_required
 
 # REST Framework imports
 from rest_framework import generics
@@ -25,7 +28,7 @@ language_map = {
     "python": "python",
     "cpp": "cpp",
     "java": "java",
-    "javascript": "js",
+    "c": "c",
 }
 
 
@@ -49,11 +52,12 @@ class ProblemDetailAPIView(generics.RetrieveAPIView):
 def compile_code_monaco(request, slug=None):
     print("[INFO] compile_code_monaco view called")
     problem = get_object_or_404(Problem, slug=slug) if slug else None
-    lang = request.POST.get("language", "python").lower()
-    language = language_map.get(lang, "python")
+    selected_language = request.POST.get("language", "python").lower()
+    # Map language for backend processing
+    backend_language = language_map.get(selected_language, "python")
 
     starter_code = (
-        get_starter_code(problem, language)
+        get_starter_code(problem, backend_language)
         if problem
         else "# Write your code here\nprint('Hello World')"
     )
@@ -76,12 +80,12 @@ def compile_code_monaco(request, slug=None):
         if not request.user.is_authenticated:
             return render(
                 request,
-                "monaco_unified.html",
+                "compiler/index.html",
                 {
                     "error": "⚠️ You must be logged in to run or submit code.",
                     "problem": problem,
                     "code": code or starter_code,
-                    "language": language,
+                    "language": selected_language,
                     "starter_codes": starter_codes,
                     "not_logged_in": True,
                     "comments": comments,
@@ -91,12 +95,12 @@ def compile_code_monaco(request, slug=None):
         if not code.strip():
             return render(
                 request,
-                "monaco_unified.html",
+                "compiler/index.html",
                 {
                     "error": "No code submitted.",
                     "problem": problem,
                     "code": starter_code,
-                    "language": language,
+                    "language": selected_language,
                     "starter_codes": starter_codes,
                     "comments": comments,
                 },
@@ -104,13 +108,13 @@ def compile_code_monaco(request, slug=None):
 
         if action == "run":
             print("🏃 Processing RUN action - calling run_examples()")
-            results = run_examples(problem, code.strip(), language)
+            results = run_examples(problem, code.strip(), backend_language)
             return render(
                 request,
-                "monaco_unified.html",
+                "compiler/index.html",
                 {
                     "code": code,
-                    "language": language,
+                    "language": selected_language,
                     "problem": problem,
                     "action": "run",
                     "run_results": results,
@@ -124,16 +128,16 @@ def compile_code_monaco(request, slug=None):
             results, passed_cases, total_cases = submit_test_cases(
                 problem,
                 code.strip(),
-                language,
+                backend_language,
                 request.user.id if request.user.is_authenticated else None,
             )
             all_passed = passed_cases == total_cases
             return render(
                 request,
-                "monaco_unified.html",
+                "compiler/index.html",
                 {
                     "code": code,
-                    "language": language,
+                    "language": selected_language,
                     "problem": problem,
                     "action": "submit",
                     "all_passed": all_passed,
@@ -148,11 +152,11 @@ def compile_code_monaco(request, slug=None):
 
     return render(
         request,
-        "monaco_unified.html",
+        "compiler/index.html",
         {
             "code": starter_code,
             "problem": problem,
-            "language": "python",
+            "language": selected_language if request.method == "POST" else "python",
             "starter_codes": starter_codes,
             "comments": comments,
         },
@@ -174,7 +178,7 @@ def compile_code_basic(request):
         if not code:
             return render(
                 request,
-                "monaco_unified.html",
+                "compiler/index.html",
                 {
                     "error": "No code submitted.",
                     "code": "",
@@ -188,7 +192,7 @@ def compile_code_basic(request):
 
         return render(
             request,
-            "monaco_unified.html",
+            "compiler/index.html",
             {
                 "code": code,
                 "language": language,
@@ -200,7 +204,7 @@ def compile_code_basic(request):
 
     return render(
         request,
-        "monaco_unified.html",
+        "compiler/index.html",
         {
             "code": "# Write your code here\nprint('Hello World')",
             "language": "python",
@@ -222,27 +226,174 @@ def get_starter_code(problem, language):
             raise ValueError("Empty code")
         return code
     except:
-        return {
-            "python": f"def {slug}(input_data):\n    # Write your code here\n    pass",
-            "java": f"public class Solution {{\n    public Object {slug}(String input) {{\n        return null;\n    }}\n}}",
-            "cpp": f'#include <string>\nusing namespace std;\nstring {slug}(string input) {{\n    return "";\n}}',
-            "js": f'function {slug}(input) {{\n    return "";\n}}',
-        }.get(language, "// Language not supported.")
+        # Better fallback templates for each language
+        fallback_templates = {
+            "python": f"def {slug.replace('-', '_')}(input_data):\n    # Write your code here\n    pass",
+            "java": f"public class Main {{\n    public Object {slug.replace('-', '_')}(Object input) {{\n        // Write your code here\n        return null;\n    }}\n}}",
+            "cpp": f'#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nstring {slug.replace("-", "_")}(string input) {{\n    // Write your code here\n    return "";\n}}',
+            "c": f'#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nchar* {slug.replace("-", "_")}(char* input) {{\n    // Write your code here\n    return "result";\n}}',
+        }
+
+        return fallback_templates.get(
+            language, f"// Language '{language}' not supported."
+        )
 
 
 # ------------------------
-# ✅ Utility: Extract Python Function Name
+# ✅ Utility: Extract Function Name for Different Languages
 # ------------------------
 def extract_python_function_name(code, fallback="function_name"):
     match = re.search(r"def\s+(\w+)\s*\(", code)
     return match.group(1) if match else fallback
 
 
+def extract_java_class_method_name(code, fallback="solution"):
+    # Look for public method in Java code
+    match = re.search(r"public\s+\w+\s+(\w+)\s*\(", code)
+    return match.group(1) if match else fallback
+
+
+def extract_cpp_function_name(code, fallback="solution"):
+    # Look for function definition in C++
+    match = re.search(r"\w+\s+(\w+)\s*\([^)]*\)\s*{", code)
+    return match.group(1) if match else fallback
+
+
+def extract_c_function_name(code, fallback="solution"):
+    # Look for function definition in C
+    match = re.search(r"\w+\*?\s+(\w+)\s*\([^)]*\)\s*{", code)
+    return match.group(1) if match else fallback
+
+
+# ------------------------
+# ✅ Utility: Generate Driver Code for Different Languages
+# ------------------------
+def generate_driver_code(language, func_name, args, slug):
+    """Generate driver code for different programming languages"""
+
+    if language == "python":
+        return f"""
+import json
+if __name__ == "__main__":
+    try:
+        result = {func_name}(*{json.dumps(args)})
+    except Exception as e:
+        result = str(e)
+    print(json.dumps(result))
+"""
+
+    elif language == "cpp":
+        # Convert Python args to C++ format
+        cpp_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                cpp_args.append(f'"{arg}"')
+            elif isinstance(arg, list):
+                if all(isinstance(x, int) for x in arg):
+                    cpp_args.append("{" + ", ".join(map(str, arg)) + "}")
+                else:
+                    cpp_args.append('{"' + '", "'.join(map(str, arg)) + '"}')
+            else:
+                cpp_args.append(str(arg))
+
+        args_str = ", ".join(cpp_args)
+
+        return f"""
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
+using namespace std;
+
+int main() {{
+    try {{
+        auto result = {func_name}({args_str});
+        cout << result << endl;
+    }} catch (const exception& e) {{
+        cout << "Error: " << e.what() << endl;
+    }}
+    return 0;
+}}
+"""
+
+    elif language == "java":
+        # Convert Python args to Java format
+        java_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                java_args.append(f'"{arg}"')
+            elif isinstance(arg, list):
+                if all(isinstance(x, int) for x in arg):
+                    java_args.append("new int[]{" + ", ".join(map(str, arg)) + "}")
+                else:
+                    java_args.append(
+                        'new String[]{"' + '", "'.join(map(str, arg)) + '"}'
+                    )
+            else:
+                java_args.append(str(arg))
+
+        args_str = ", ".join(java_args)
+
+        # Simple Java driver code that appends main method inside the user's class
+        return f"""
+
+    public static void main(String[] args) {{
+        Main solution = new Main();
+        Object result = solution.{func_name}({args_str});
+        System.out.println(result);
+    }}
+}}"""
+
+    elif language == "c":
+        # Convert Python args to C format
+        c_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                c_args.append(f'"{arg}"')
+            else:
+                c_args.append(str(arg))
+
+        args_str = ", ".join(c_args)
+
+        return f"""
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {{
+    char* result = {func_name}({args_str});
+    printf("%s\\n", result);
+    return 0;
+}}
+"""
+
+    else:
+        print(f"[WARNING] Unsupported language for driver code generation: {language}")
+        return ""
+
+
+# ------------------------
+# ✅ Utility: Get Function Name Based on Language
+# ------------------------
+def get_function_name(starter_code, language, fallback):
+    """Extract function name based on the programming language"""
+    if language == "python":
+        return extract_python_function_name(starter_code, fallback)
+    elif language == "java":
+        return extract_java_class_method_name(starter_code, fallback)
+    elif language == "cpp":
+        return extract_cpp_function_name(starter_code, fallback)
+    elif language == "c":
+        return extract_c_function_name(starter_code, fallback)
+    else:
+        return fallback
+
+
 # ------------------------
 # ✅ Run Examples (per-case driver)
 # ------------------------
 def run_examples(problem, code, language):
-    print("🔄 run_examples called - THIS SHOULD ONLY BE CALLED FOR 'RUN' ACTION")
+    print(f"🔄 run_examples called for language: {language}")
     examples = getattr(problem, "examples_group", None)
     examples = examples.examples if examples else []
 
@@ -251,10 +402,13 @@ def run_examples(problem, code, language):
         ex.get("output") for ex in examples if ex.get("output") is not None
     ]
 
-    starter_code = problem.starter_code.get_code("python", slug=problem.slug)
-    func_name = extract_python_function_name(
-        starter_code, fallback=problem.slug.replace("-", "_")
+    # Get starter code for the specific language
+    starter_code = problem.starter_code.get_code(language, slug=problem.slug)
+    func_name = get_function_name(
+        starter_code, language, fallback=problem.slug.replace("-", "_")
     )
+
+    print(f"📝 Using function name: {func_name} for language: {language}")
 
     results = []
     for i, (input_val, expected_output) in enumerate(
@@ -269,27 +423,73 @@ def run_examples(problem, code, language):
             print(f"[ERROR] run_examples({i}): {e}")
             args = []
 
-        if language == "python":
-            driver_code = f"""
-import json
-if __name__ == "__main__":
-    try:
-        result = {func_name}(*{json.dumps(args)})
-    except Exception as e:
-        result = str(e)
-    print(json.dumps(result))
-"""
-        else:
-            return []
+        # Generate driver code based on language
+        driver_code = generate_driver_code(language, func_name, args, problem.slug)
 
-        final_code = code.strip() + "\n\n" + textwrap.dedent(driver_code)
+        if not driver_code:
+            print(f"[ERROR] Unsupported language: {language}")
+            results.append(
+                {
+                    "input": input_val,
+                    "expected": expected_output,
+                    "output": f"Unsupported language: {language}",
+                    "passed": False,
+                    "case_number": i,
+                }
+            )
+            continue
+
+        print(f"🚀 Generated driver code for {language}:")
+        print(f"{'='*50}")
+        print(driver_code[:200] + "..." if len(driver_code) > 200 else driver_code)
+        print(f"{'='*50}")
+
+        if language == "java":
+            # For Java, ensure class name is "Main" (required by Docker container)
+            java_code = code.strip()
+            # Replace "class Solution" with "class Main" if present
+            java_code = re.sub(r"\bclass\s+Solution\b", "class Main", java_code)
+
+            # Remove the last closing brace from user code and append driver code + closing brace
+            user_code_without_last_brace = java_code.rstrip("}").rstrip()
+            final_code = (
+                user_code_without_last_brace + "\n" + textwrap.dedent(driver_code)
+            )
+        else:
+            final_code = code.strip() + "\n\n" + textwrap.dedent(driver_code)
+
         result_output = execute_code(final_code, language=language, input_data="")
 
         try:
-            output_line = result_output.strip().splitlines()[-1]
-            output_val = json.loads(output_line)
+            output_lines = result_output.strip().splitlines()
+            if not output_lines:
+                output_val = "No output"
+            else:
+                output_line = output_lines[-1]
+
+                # Parse output based on language
+                if language == "python" or language == "c":
+                    try:
+                        output_val = json.loads(output_line)
+                    except json.JSONDecodeError:
+                        output_val = output_line
+                else:
+                    # For C++ and Java, the output is usually direct
+                    output_val = output_line
+
+                    # Try to convert to appropriate type if it's a number
+                    try:
+                        if "." in output_val:
+                            output_val = float(output_val)
+                        else:
+                            output_val = int(output_val)
+                    except (ValueError, TypeError):
+                        # Keep as string if can't convert
+                        pass
+
         except Exception as e:
-            output_val = "Error"
+            print(f"[ERROR] Parsing output for {language}: {e}")
+            output_val = "Error parsing output"
 
         results.append(
             {
@@ -316,9 +516,11 @@ def submit_test_cases(problem, code, language, user_id=None):
     expected_outputs = [tc.get("output_data") for tc in test_cases]
     print(f"inputs:{inputs}")
     print(f"expected_outputs:{expected_outputs}")
-    starter_code = problem.starter_code.get_code("python", slug=problem.slug)
-    func_name = extract_python_function_name(
-        starter_code, fallback=problem.slug.replace("-", "_")
+
+    # Get starter code for the specific language
+    starter_code = problem.starter_code.get_code(language, slug=problem.slug)
+    func_name = get_function_name(
+        starter_code, language, fallback=problem.slug.replace("-", "_")
     )
 
     results, times, passed_cases = [], [], 0
@@ -334,27 +536,71 @@ def submit_test_cases(problem, code, language, user_id=None):
         except Exception as e:
             args = []
 
-        driver_code = f"""
-import json
-if __name__ == "__main__":
-    try:
-        result = {func_name}(*{json.dumps(args)})
-    except Exception as e:
-        result = str(e)
-    print(json.dumps(result))
-"""
+        # Generate driver code based on language
+        driver_code = generate_driver_code(language, func_name, args, problem.slug)
 
-        final_code = code.strip() + "\n\n" + textwrap.dedent(driver_code)
+        if not driver_code:
+            print(f"[ERROR] Unsupported language: {language}")
+            results.append(
+                {
+                    "input": input_val,
+                    "expected": expected_output,
+                    "output": f"Unsupported language: {language}",
+                    "passed": False,
+                    "case_number": i,
+                }
+            )
+            break
+
+        if language == "java":
+            # For Java, ensure class name is "Main" (required by Docker container)
+            java_code = code.strip()
+            # Replace "class Solution" with "class Main" if present
+            java_code = re.sub(r"\bclass\s+Solution\b", "class Main", java_code)
+
+            # Remove the last closing brace from user code and append driver code + closing brace
+            user_code_without_last_brace = java_code.rstrip("}").rstrip()
+            final_code = (
+                user_code_without_last_brace + "\n" + textwrap.dedent(driver_code)
+            )
+        else:
+            final_code = code.strip() + "\n\n" + textwrap.dedent(driver_code)
+
         start_time = time.time()
         result_output = execute_code(final_code, language=language, input_data="")
         time_taken = round(time.time() - start_time, 4)
         times.append(time_taken)
 
         try:
-            output_line = result_output.strip().splitlines()[-1]
-            output_val = json.loads(output_line)
-        except:
-            output_val = "Error"
+            output_lines = result_output.strip().splitlines()
+            if not output_lines:
+                output_val = "No output"
+            else:
+                output_line = output_lines[-1]
+
+                # Parse output based on language
+                if language == "python" or language == "c":
+                    try:
+                        output_val = json.loads(output_line)
+                    except json.JSONDecodeError:
+                        output_val = output_line
+                else:
+                    # For C++ and Java, the output is usually direct
+                    output_val = output_line
+
+                    # Try to convert to appropriate type if it's a number
+                    try:
+                        if "." in output_val:
+                            output_val = float(output_val)
+                        else:
+                            output_val = int(output_val)
+                    except (ValueError, TypeError):
+                        # Keep as string if can't convert
+                        pass
+
+        except Exception as e:
+            print(f"[ERROR] Parsing output for {language}: {e}")
+            output_val = "Error parsing output"
 
         output_str = output_val.strip() if isinstance(output_val, str) else output_val
         expected_str = (
@@ -550,3 +796,130 @@ def add_test_leaderboard_data(request, slug):
             "message": f"Added {len(test_data)} test submissions for problem {problem.title}"
         }
     )
+
+
+# ------------------------
+# ✅ Problem Upload View
+# ------------------------
+@staff_member_required
+def upload_problem(request):
+    """View for uploading new problems - restricted to staff members"""
+    if request.method == "POST":
+        try:
+            with transaction.atomic():
+                # Extract basic problem data
+                title = request.POST.get("title", "").strip()
+                slug = request.POST.get("slug", "").strip()
+                difficulty = request.POST.get("difficulty", "").strip()
+                statement = request.POST.get("statement", "").strip()
+                tags = request.POST.get("tags", "").strip()
+                constraints = request.POST.get("constraints", "").strip()
+                hints = request.POST.get("hints", "").strip()
+                time_limit = float(request.POST.get("time_limit", 2.0))
+                memory_limit = int(request.POST.get("memory_limit", 128))
+                is_active = request.POST.get("is_active") == "on"
+
+                # Validate required fields
+                if not all([title, slug, difficulty, statement]):
+                    messages.error(
+                        request,
+                        "Please fill in all required fields (Title, Slug, Difficulty, Statement).",
+                    )
+                    return render(request, "problems/upload.html")
+
+                # Check if slug already exists
+                if Problem.objects.filter(slug=slug).exists():
+                    messages.error(
+                        request,
+                        f'A problem with slug "{slug}" already exists. Please choose a different slug.',
+                    )
+                    return render(request, "problems/upload.html")
+
+                # Create the problem
+                problem = Problem.objects.create(
+                    title=title,
+                    slug=slug,
+                    difficulty=difficulty,
+                    statement=statement,
+                    tags=tags,
+                    constraints=constraints,
+                    input_format="",  # You can add this to the form if needed
+                    output_format="",  # You can add this to the form if needed
+                )
+
+                # Handle examples
+                example_inputs = request.POST.getlist("example_input[]")
+                example_outputs = request.POST.getlist("example_output[]")
+                example_explanations = request.POST.getlist("example_explanation[]")
+
+                examples_data = []
+                for i, (inp, out) in enumerate(zip(example_inputs, example_outputs)):
+                    if inp.strip() and out.strip():
+                        example_data = {"input": inp.strip(), "output": out.strip()}
+                        if (
+                            i < len(example_explanations)
+                            and example_explanations[i].strip()
+                        ):
+                            example_data["explanation"] = example_explanations[
+                                i
+                            ].strip()
+                        examples_data.append(example_data)
+
+                if examples_data:
+                    from App.models import Example
+
+                    Example.objects.create(problem=problem, examples=examples_data)
+
+                # Handle test cases
+                test_inputs = request.POST.getlist("test_input[]")
+                test_outputs = request.POST.getlist("test_output[]")
+
+                test_cases_data = []
+                for inp, out in zip(test_inputs, test_outputs):
+                    if inp.strip() and out.strip():
+                        test_cases_data.append(
+                            {"input_data": inp.strip(), "output_data": out.strip()}
+                        )
+
+                if test_cases_data:
+                    from App.models import TestCase
+
+                    TestCase.objects.create(problem=problem, test_cases=test_cases_data)
+
+                # Handle starter code
+                starter_languages = request.POST.getlist("starter_language[]")
+                starter_codes = request.POST.getlist("starter_code[]")
+
+                starter_code_data = {}
+                for lang, code in zip(starter_languages, starter_codes):
+                    if lang.strip() and code.strip():
+                        starter_code_data[lang.strip()] = code.strip()
+
+                if starter_code_data:
+                    from App.models import StarterCode
+
+                    starter_code_obj = StarterCode.objects.create(problem=problem)
+                    # Set the codes for each language based on the model fields
+                    for lang, code in starter_code_data.items():
+                        if lang == "python":
+                            starter_code_obj.base_code_python = code
+                        elif lang == "cpp":
+                            starter_code_obj.base_code_cpp = code
+                        elif lang == "java":
+                            starter_code_obj.base_code_java = code
+                        elif lang == "c":
+                            starter_code_obj.base_code_c = code
+                    starter_code_obj.save()
+
+                problem.save()
+
+                messages.success(
+                    request, f'Problem "{title}" has been uploaded successfully!'
+                )
+                return redirect("problems")  # Redirect to problems list
+
+        except Exception as e:
+            messages.error(request, f"Error uploading problem: {str(e)}")
+            return render(request, "problems/upload.html")
+
+    return render(request, "problems/upload.html")

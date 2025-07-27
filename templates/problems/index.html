@@ -21,6 +21,11 @@
       <p class="lead text-muted">Challenge yourself with our curated collection of programming problems</p>
     </div>
     <div class="d-flex gap-2">
+      {% if user.is_staff %}
+      <a href="{% url 'upload-problem' %}" class="btn btn-success">
+        <i class="bi bi-cloud-upload me-1"></i>Upload Problem
+      </a>
+      {% endif %}
       <select class="form-select" id="difficultyFilter" style="width: auto;">
         <option value="">All Difficulties</option>
         <option value="Easy">Easy</option>

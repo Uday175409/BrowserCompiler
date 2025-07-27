@@ -27,7 +27,7 @@
                                     <p class="auth-subtitle">Sign in to your account</p>
                                 </div>
 
-                                <form id="loginForm" method="post" action="{% url 'login' %}">
+                                <form id="loginForm" method="post" action="{% url 'login-user' %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="login">
                                     
@@ -102,7 +102,7 @@
                                     <p class="auth-subtitle">Join our coding community</p>
                                 </div>
 
-                                <form id="registerForm" method="post" action="{% url 'register' %}">
+                                <form id="registerForm" method="post" action="{% url 'register-user' %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="register">
                                     

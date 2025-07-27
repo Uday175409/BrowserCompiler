@@ -71,11 +71,11 @@ def register_user(request):
         password = request.POST.get("password", "").strip()
 
         if AppUser.objects.filter(email=email).exists():
-            return render(request, "auth/index.html", {"error": "Email already exists"})
+            return render(request, "auth/auth.html", {"error": "Email already exists"})
 
         if AppUser.objects.filter(phone=phone).exists():
             return render(
-                request, "auth/index.html", {"error": "Phone number already exists"}
+                request, "auth/auth.html", {"error": "Phone number already exists"}
             )
 
         try:
@@ -94,9 +94,9 @@ def register_user(request):
             return redirect("auth-page")
         except IntegrityError as e:
             print(f"IntegrityError: {e}")
-            return render(request, "auth/index.html", {"error": "Something went wrong"})
+            return render(request, "auth/auth.html", {"error": "Something went wrong"})
 
-    return render(request, "auth/index.html")
+    return render(request, "auth/auth.html")
 
 
 # ------------------------
@@ -126,10 +126,10 @@ def login_user(request):
                 return redirect("home")  # Default fallback
             else:
                 return render(
-                    request, "auth/index.html", {"error": "Invalid credentials"}
+                    request, "auth/auth.html", {"error": "Invalid credentials"}
                 )
         except AppUser.DoesNotExist:
-            return render(request, "auth/index.html", {"error": "User not found"})
+            return render(request, "auth/auth.html", {"error": "User not found"})
 
     return redirect("auth-page")
 
@@ -138,4 +138,4 @@ def login_user(request):
 # ✅ Render Auth Page
 # ------------------------
 def auth_view(request):
-    return render(request, "auth/index.html")
+    return render(request, "auth/auth.html")

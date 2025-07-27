@@ -1,2 +1,32 @@
 # .gitignore
 .env
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database
+*.sqlite3
+
+# Media files (if not needed in repo)
+# media/
+
+# Static files (if generated)
+# static/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

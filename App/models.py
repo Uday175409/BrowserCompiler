@@ -92,7 +92,7 @@ class StarterCode(models.Model):
     base_code_python = models.TextField(blank=True, null=True)
     base_code_cpp = models.TextField(blank=True, null=True)
     base_code_java = models.TextField(blank=True, null=True)
-    base_code_js = models.TextField(blank=True, null=True)
+    base_code_c = models.TextField(blank=True, null=True)
 
     def get_code(self, lang, slug="function_name"):
         fallback_function_name = slug.replace("-", "_")
@@ -100,7 +100,7 @@ class StarterCode(models.Model):
             "python": self.base_code_python,
             "cpp": self.base_code_cpp,
             "java": self.base_code_java,
-            "js": self.base_code_js,
+            "c": self.base_code_c,
         }.get(lang, "")
 
 

@@ -4,9 +4,7 @@ from .auth_views import (
     login_user,
     logout_view,
     register_user,
-    CookieLoginView,
     auth_view,
-    secret_view,
 )
 
 from .profile_views import (
@@ -19,13 +17,7 @@ from .profile_views import (
     about_page,
     contact_page,
     user_history,
-)
-
-from .code_views import (
-    compile_code_basic,
-    compile_code_monaco,
-    run_examples,
-    submit_test_cases,
-    submit_comment,
-    leaderboard_data,
+    custom_404,
+    custom_404_test,
+    custom_404_catch_all,
 )

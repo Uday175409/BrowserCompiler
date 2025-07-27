@@ -27,6 +27,19 @@
     z-index: 2;
 }
 
+/* Form Switching Styles */
+#loginForm {
+    display: block;
+}
+
+#registerForm {
+    display: none;
+}
+
+.auth-form {
+    transition: all 0.3s ease-in-out;
+}
+
 /* Auth Card */
 .auth-card {
     background: rgba(255, 255, 255, 0.95);

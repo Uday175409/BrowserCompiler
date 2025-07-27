@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Page Not Found - CodeCompiler{% endblock %}
+
+{% block links %}
+<style>
+  .error-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  
+  .error-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    padding: 3rem;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .error-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color), var(--warning-color), var(--danger-color));
+  }
+  
+  .error-code {
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--primary-color);
+    line-height: 1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .error-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  .error-suggestions {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: left;
+  }
+  
+  .error-suggestions h5 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+  
+  .error-suggestions ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+  
+  .error-suggestions li {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+  
+  .btn-404 {
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .btn-404.primary {
+    background: var(--primary-color);
+    color: white;
+    border: 2px solid var(--primary-color);
+  }
+  
+  .btn-404.primary:hover {
+    background: transparent;
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
+  }
+  
+  .btn-404.secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+  }
+  
+  .btn-404.secondary:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
+  }
+  
+  .search-container {
+    margin-top: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .search-box {
+    position: relative;
+  }
+  
+  .search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+  }
+  
+  .search-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+  }
+  
+  .search-box button {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    bottom: 5px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 0 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .search-box button:hover {
+    background: var(--primary-dark);
+  }
+  
+  .floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  
+  .floating-code {
+    position: absolute;
+    font-family: 'Fira Code', monospace;
+    color: rgba(var(--primary-rgb), 0.1);
+    font-size: 0.9rem;
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+  
+  .floating-code:nth-child(1) {
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+  
+  .floating-code:nth-child(2) {
+    top: 20%;
+    right: 15%;
+    animation-delay: 1s;
+  }
+  
+  .floating-code:nth-child(3) {
+    bottom: 30%;
+    left: 20%;
+    animation-delay: 2s;
+  }
+  
+  .floating-code:nth-child(4) {
+    bottom: 20%;
+    right: 20%;
+    animation-delay: 3s;
+  }
+  
+  .breadcrumb-nav {
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: left;
+  }
+  
+  .breadcrumb-nav a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .breadcrumb-nav a:hover {
+    text-decoration: underline;
+  }
+  
+  .recently-visited {
+    background: rgba(var(--success-rgb), 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    text-align: left;
+  }
+  
+  .recently-visited h6 {
+    color: var(--success-color);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+  
+  .quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .quick-link {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+  }
+  
+  .quick-link:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    .error-code {
+      font-size: 6rem;
+    }
+    
+    .error-title {
+      font-size: 2rem;
+    }
+    
+    .error-message {
+      font-size: 1.1rem;
+    }
+    
+    .action-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .btn-404 {
+      width: 100%;
+      max-width: 250px;
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="error-container">
+  <div class="error-card">
+    <div class="floating-elements">
+      <div class="floating-code">if (page.found) {</div>
+      <div class="floating-code">return content;</div>
+      <div class="floating-code">} else {</div>
+      <div class="floating-code">throw 404;</div>
+    </div>
+    
+    <div class="breadcrumb-nav">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">404 Error</li>
+        </ol>
+      </nav>
+    </div>
+    
+    <div class="error-code">404</div>
+    <h1 class="error-title">Page Not Found</h1>
+    <p class="error-message">
+      Oops! The page you're looking for seems to have vanished into the digital void. 
+      Don't worry though - even the best developers encounter 404s!
+    </p>
+    
+    <div class="error-suggestions">
+      <h5><i class="bi bi-lightbulb me-2"></i>Here's what you can try:</h5>
+      <ul>
+        <li>Check the URL for any typos or missing characters</li>
+        <li>Navigate back to the homepage and try again</li>
+        <li>Use the search feature to find what you're looking for</li>
+        <li>Browse our available problems and challenges</li>
+        <li>Check if you have the correct permissions to access this page</li>
+      </ul>
+    </div>
+    
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search for problems, topics, or pages..." onkeypress="handleSearch(event)">
+        <button type="button" onclick="performSearch()">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="action-buttons">
+      <a href="{% url 'home' %}" class="btn-404 primary">
+        <i class="bi bi-house-fill"></i>
+        Back to Home
+      </a>
+      <a href="{% url 'problems' %}" class="btn-404 secondary">
+        <i class="bi bi-puzzle"></i>
+        Browse Problems
+      </a>
+      <a href="javascript:history.back()" class="btn-404 secondary">
+        <i class="bi bi-arrow-left"></i>
+        Go Back
+      </a>
+    </div>
+    
+    <div class="recently-visited">
+      <h6><i class="bi bi-clock-history me-2"></i>Quick Navigation</h6>
+      <div class="quick-links">
+        <a href="{% url 'home' %}" class="quick-link">
+          <i class="bi bi-house me-1"></i>Home
+        </a>
+        <a href="{% url 'problems' %}" class="quick-link">
+          <i class="bi bi-puzzle me-1"></i>Problems
+        </a>
+        <a href="{% url 'languages' %}" class="quick-link">
+          <i class="bi bi-code-slash me-1"></i>Languages
+        </a>
+        <a href="{% url 'about' %}" class="quick-link">
+          <i class="bi bi-info-circle me-1"></i>About
+        </a>
+        <a href="{% url 'contact' %}" class="quick-link">
+          <i class="bi bi-envelope me-1"></i>Contact
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'profile-page' %}" class="quick-link">
+          <i class="bi bi-person me-1"></i>Profile
+        </a>
+        <a href="{% url 'history' %}" class="quick-link">
+          <i class="bi bi-clock-history me-1"></i>History
+        </a>
+        {% else %}
+        <a href="{% url 'auth-page' %}" class="quick-link">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Login
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleSearch(event) {
+  if (event.key === 'Enter') {
+    performSearch();
+  }
+}
+
+function performSearch() {
+  const query = document.getElementById('searchInput').value.trim();
+  if (query) {
+    // Simple search redirect - you can enhance this based on your search implementation
+    const searchUrls = {
+      'problems': '{% url "problems" %}',
+      'home': '{% url "home" %}',
+      'about': '{% url "about" %}',
+      'contact': '{% url "contact" %}',
+      'languages': '{% url "languages" %}',
+      'profile': '{% url "profile-page" %}',
+      'history': '{% url "history" %}',
+      'auth': '{% url "auth-page" %}',
+      'login': '{% url "auth-page" %}',
+      'register': '{% url "auth-page" %}'
+    };
+    
+    const lowerQuery = query.toLowerCase();
+    let foundUrl = null;
+    
+    // Check for exact matches
+    for (const [key, url] of Object.entries(searchUrls)) {
+      if (lowerQuery.includes(key)) {
+        foundUrl = url;
+        break;
+      }
+    }
+    
+    if (foundUrl) {
+      window.location.href = foundUrl;
+    } else {
+      // Default to problems page with search (if you have search functionality)
+      window.location.href = '{% url "problems" %}';
+    }
+  }
+}
+
+// Add some interactive elements
+document.addEventListener('DOMContentLoaded', function() {
+  // Animate the error code on load
+  const errorCode = document.querySelector('.error-code');
+  if (errorCode) {
+    setTimeout(() => {
+      errorCode.style.transform = 'scale(1.1)';
+      setTimeout(() => {
+        errorCode.style.transform = 'scale(1)';
+      }, 200);
+    }, 500);
+  }
+  
+  // Add hover effects to floating code elements
+  const floatingElements = document.querySelectorAll('.floating-code');
+  floatingElements.forEach((element, index) => {
+    element.addEventListener('mouseenter', function() {
+      this.style.color = 'rgba(var(--primary-rgb), 0.3)';
+      this.style.transform = 'scale(1.1) rotate(10deg)';
+    });
+    
+    element.addEventListener('mouseleave', function() {
+      this.style.color = 'rgba(var(--primary-rgb), 0.1)';
+      this.style.transform = 'scale(1) rotate(0deg)';
+    });
+  });
+  
+  // Focus search input when page loads
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    setTimeout(() => {
+      searchInput.focus();
+    }, 1000);
+  }
+  
+  // Add typing effect to error message
+  const errorMessage = document.querySelector('.error-message');
+  if (errorMessage) {
+    const originalText = errorMessage.textContent;
+    errorMessage.textContent = '';
+    let index = 0;
+    
+    function typeWriter() {
+      if (index < originalText.length) {
+        errorMessage.textContent += originalText.charAt(index);
+        index++;
+        setTimeout(typeWriter, 30);
+      }
+    }
+    
+    setTimeout(typeWriter, 1000);
+  }
+});
+
+// Add some console easter egg
+console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║                         404 ERROR                           ║
+║                                                              ║
+║  🔍 Looks like you found our secret console message!        ║
+║                                                              ║
+║  💡 Developer tip: Always check your URL patterns when      ║
+║     encountering 404 errors in Django applications.         ║
+║                                                              ║
+║  🚀 Want to contribute? Check out our GitHub repository!    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+`);
+</script>
+{% endblock %}

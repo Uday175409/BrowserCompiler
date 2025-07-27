@@ -1,13 +1,197 @@
 {% extends "base.html" %}
-{% block title %}Supported Languages{% endblock %}
+{% load static %}
+{% load page_assets %}
+
+{% block title %}Supported Languages - CodeCompiler{% endblock %}
+
+{% block links %}
+{% load_page_css 'languages' %}
+{% endblock %}
+
 {% block body %}
-<div class="container mt-5">
-  <h2>Supported Languages</h2>
-  <ul class="list-group mt-3">
-    <li class="list-group-item">Python (ID: 71)</li>
-    <li class="list-group-item">C++ (ID: 54)</li>
-    <li class="list-group-item">Java (ID: 62)</li>
-    <li class="list-group-item">JavaScript (ID: 63)</li>
-  </ul>
+<!-- Languages Header -->
+<div class="languages-header">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 class="languages-title">
+                    <i class="bi bi-code-slash me-3"></i>
+                    Supported Programming Languages
+                </h1>
+                <p class="languages-subtitle">
+                    Write, run, and test your code in multiple programming languages with our powerful online compiler
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Languages Grid -->
+<div class="languages-content">
+    <div class="container">
+        <div class="languages-grid">
+            <!-- Python -->
+            <div class="language-card" data-language="python">
+                <div class="language-icon">
+                    <i class="fab fa-python"></i>
+                </div>
+                <h3 class="language-name">Python</h3>
+                <p class="language-description">
+                    High-level, interpreted language perfect for beginners and data science
+                </p>
+                <div class="language-features">
+                    <span class="feature-tag">Easy to Learn</span>
+                    <span class="feature-tag">Data Science</span>
+                    <span class="feature-tag">Web Development</span>
+                </div>
+                <div class="language-version">Version: 3.11 (ID: 71)</div>
+                <a href="/compiler?lang=python" class="language-btn">
+                    <i class="bi bi-play-fill me-2"></i>Try Python
+                </a>
+            </div>
+
+            <!-- C -->
+            <div class="language-card" data-language="c">
+                <div class="language-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3 class="language-name">C</h3>
+                <p class="language-description">
+                    Powerful system programming language with direct hardware access
+                </p>
+                <div class="language-features">
+                    <span class="feature-tag">System Programming</span>
+                    <span class="feature-tag">Low-level</span>
+                    <span class="feature-tag">Performance</span>
+                </div>
+                <div class="language-version">Version: GCC 11.4 (ID: 50)</div>
+                <a href="/compiler?lang=c" class="language-btn">
+                    <i class="bi bi-play-fill me-2"></i>Try C
+                </a>
+            </div>
+
+            <!-- Java -->
+            <div class="language-card" data-language="java">
+                <div class="language-icon">
+                    <i class="fab fa-java"></i>
+                </div>
+                <h3 class="language-name">Java</h3>
+                <p class="language-description">
+                    Object-oriented programming language for enterprise applications
+                </p>
+                <div class="language-features">
+                    <span class="feature-tag">Enterprise</span>
+                    <span class="feature-tag">Android</span>
+                    <span class="feature-tag">Cross-platform</span>
+                </div>
+                <div class="language-version">Version: 17 LTS (ID: 62)</div>
+                <a href="/compiler?lang=java" class="language-btn">
+                    <i class="bi bi-play-fill me-2"></i>Try Java
+                </a>
+            </div>
+
+            <!-- C++ -->
+            <div class="language-card" data-language="cpp">
+                <div class="language-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3 class="language-name">C++</h3>
+                <p class="language-description">
+                    Powerful system programming language with object-oriented features
+                </p>
+                <div class="language-features">
+                    <span class="feature-tag">System Programming</span>
+                    <span class="feature-tag">Game Development</span>
+                    <span class="feature-tag">Performance</span>
+                </div>
+                <div class="language-version">Version: C++20 (ID: 54)</div>
+                <a href="/compiler?lang=cpp" class="language-btn">
+                    <i class="bi bi-play-fill me-2"></i>Try C++
+                </a>
+            </div>
+        </div>
+
+        <!-- Language Comparison -->
+        <div class="language-comparison mt-5">
+            <h2 class="comparison-title text-center mb-4">
+                <i class="bi bi-bar-chart me-2"></i>
+                Language Comparison
+            </h2>
+            
+            <div class="comparison-table-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Language</th>
+                            <th>Difficulty</th>
+                            <th>Performance</th>
+                            <th>Use Cases</th>
+                            <th>Learning Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Python</strong></td>
+                            <td><span class="difficulty easy">Easy</span></td>
+                            <td><span class="performance medium">Medium</span></td>
+                            <td>Data Science, Web, AI</td>
+                            <td>2-4 weeks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>C</strong></td>
+                            <td><span class="difficulty hard">Hard</span></td>
+                            <td><span class="performance high">High</span></td>
+                            <td>System Programming, Embedded</td>
+                            <td>4-6 weeks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Java</strong></td>
+                            <td><span class="difficulty medium">Medium</span></td>
+                            <td><span class="performance high">High</span></td>
+                            <td>Enterprise, Android</td>
+                            <td>4-6 weeks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>C++</strong></td>
+                            <td><span class="difficulty hard">Hard</span></td>
+                            <td><span class="performance very-high">Very High</span></td>
+                            <td>Systems, Games, Performance</td>
+                            <td>8-12 weeks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Getting Started -->
+        <div class="getting-started mt-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="getting-started-card">
+                        <h2 class="text-center mb-4">
+                            <i class="bi bi-rocket-takeoff me-2"></i>
+                            Ready to Start Coding?
+                        </h2>
+                        <p class="text-center mb-4">
+                            Choose a language above and start writing code immediately in our online compiler. 
+                            No setup required!
+                        </p>
+                        <div class="text-center">
+                            <a href="/problems" class="btn btn-primary btn-lg me-3">
+                                <i class="bi bi-puzzle me-2"></i>Solve Problems
+                            </a>
+                            <a href="/compiler" class="btn btn-outline-primary btn-lg">
+                                <i class="bi bi-code-slash me-2"></i>Open Compiler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'languages' %}
 {% endblock %}

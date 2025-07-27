@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% load static %}
+{% load page_assets %}
+
+{% block title %}Upload Problem - CodeCompiler{% endblock %}
+
+{% block links %}
+{% load_page_css 'problems' %}
+{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+  <!-- Header Section -->
+  <div class="d-flex align-items-center mb-4">
+    <a href="{% url 'problems' %}" class="btn btn-outline-secondary me-3">
+      <i class="bi bi-arrow-left me-1"></i>Back to Problems
+    </a>
+    <div>
+      <h1 class="display-6 fw-bold mb-2">
+        <i class="bi bi-cloud-upload text-primary me-2"></i>
+        Upload New Problem
+      </h1>
+      <p class="lead text-muted">Add a new coding challenge to the platform</p>
+    </div>
+  </div>
+
+  <!-- Upload Form -->
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="modern-card">
+        <div class="modern-card-body p-4">
+          <!-- Error/Success Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{{ message.tags == 'error' and 'exclamation-triangle' or 'check-circle' }}-fill me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="POST" enctype="multipart/form-data" id="problemUploadForm">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-info-circle text-primary me-2"></i>
+                Basic Information
+              </h4>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label for="title" class="form-label fw-semibold">Problem Title *</label>
+                <input type="text" class="form-control" id="title" name="title" required 
+                       placeholder="e.g., Two Sum, Binary Tree Traversal">
+                <div class="form-text">Choose a clear, descriptive title for your problem</div>
+              </div>
+              <div class="col-md-4">
+                <label for="difficulty" class="form-label fw-semibold">Difficulty *</label>
+                <select class="form-select" id="difficulty" name="difficulty" required>
+                  <option value="">Select Difficulty</option>
+                  <option value="Easy">🟢 Easy</option>
+                  <option value="Medium">🟡 Medium</option>
+                  <option value="Hard">🔴 Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="slug" class="form-label fw-semibold">URL Slug *</label>
+              <input type="text" class="form-control" id="slug" name="slug" required 
+                     placeholder="e.g., two-sum, binary-tree-traversal">
+              <div class="form-text">URL-friendly version of the title (auto-generated from title)</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="tags" class="form-label fw-semibold">Tags</label>
+              <input type="text" class="form-control" id="tags" name="tags" 
+                     placeholder="e.g., array, hash-table, two-pointers">
+              <div class="form-text">Comma-separated tags to help categorize the problem</div>
+            </div>
+
+            <!-- Problem Statement -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-file-text text-primary me-2"></i>
+                Problem Statement
+              </h4>
+            </div>
+
+            <div class="mb-3">
+              <label for="statement" class="form-label fw-semibold">Problem Description *</label>
+              <textarea class="form-control" id="statement" name="statement" rows="8" required
+                        placeholder="Describe the problem clearly. Include:
+- What the problem is asking
+- Input format and constraints
+- Output format
+- Any special conditions or edge cases"></textarea>
+              <div class="form-text">Provide a clear, detailed description of the problem</div>
+            </div>
+
+            <!-- Examples Section -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-lightbulb text-primary me-2"></i>
+                Examples
+              </h4>
+            </div>
+
+            <div id="examplesContainer">
+              <div class="example-item border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="fw-semibold mb-0">Example 1</h6>
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-example" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Input</label>
+                    <textarea class="form-control" name="example_input[]" rows="3" 
+                              placeholder="Sample input for this example"></textarea>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Expected Output</label>
+                    <textarea class="form-control" name="example_output[]" rows="3" 
+                              placeholder="Expected output for this input"></textarea>
+                  </div>
+                </div>
+                <div class="mb-0">
+                  <label class="form-label fw-semibold">Explanation (Optional)</label>
+                  <textarea class="form-control" name="example_explanation[]" rows="2" 
+                            placeholder="Explain how the input produces this output"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline-primary mb-4" id="addExampleBtn">
+              <i class="bi bi-plus-circle me-1"></i>Add Another Example
+            </button>
+
+            <!-- Test Cases Section -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-check2-square text-primary me-2"></i>
+                Test Cases
+              </h4>
+            </div>
+
+            <div id="testCasesContainer">
+              <div class="test-case-item border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="fw-semibold mb-0">Test Case 1</h6>
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-test-case" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Input</label>
+                    <textarea class="form-control" name="test_input[]" rows="3" required
+                              placeholder="Test case input"></textarea>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Expected Output</label>
+                    <textarea class="form-control" name="test_output[]" rows="3" required
+                              placeholder="Expected output"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline-primary mb-4" id="addTestCaseBtn">
+              <i class="bi bi-plus-circle me-1"></i>Add Another Test Case
+            </button>
+
+            <!-- Starter Code Section -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-code-slash text-primary me-2"></i>
+                Starter Code Templates
+              </h4>
+            </div>
+
+            <div id="starterCodeContainer">
+              <div class="starter-code-item border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="fw-semibold mb-0">Starter Code 1</h6>
+                  <button type="button" class="btn btn-sm btn-outline-danger remove-starter-code" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label fw-semibold">Language</label>
+                    <select class="form-select" name="starter_language[]" required>
+                      <option value="">Select Language</option>
+                      <option value="python">Python</option>
+                      <option value="c">C</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                      <option value="csharp">C#</option>
+                      <option value="go">Go</option>
+                      <option value="rust">Rust</option>
+                    </select>
+                  </div>
+                  <div class="col-md-8 mb-3">
+                    <label class="form-label fw-semibold">Starter Code</label>
+                    <textarea class="form-control font-monospace" name="starter_code[]" rows="6" 
+                              placeholder="def solution():
+    # Your code here
+    pass"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline-primary mb-4" id="addStarterCodeBtn">
+              <i class="bi bi-plus-circle me-1"></i>Add Another Language
+            </button>
+
+            <!-- Constraints and Notes -->
+            <div class="section-header">
+              <h4 class="fw-bold mb-3">
+                <i class="bi bi-exclamation-triangle text-primary me-2"></i>
+                Additional Information
+              </h4>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="time_limit" class="form-label fw-semibold">Time Limit (seconds)</label>
+                <input type="number" class="form-control" id="time_limit" name="time_limit" 
+                       value="2" min="1" max="30" step="0.1">
+                <div class="form-text">Maximum execution time allowed</div>
+              </div>
+              <div class="col-md-6">
+                <label for="memory_limit" class="form-label fw-semibold">Memory Limit (MB)</label>
+                <input type="number" class="form-control" id="memory_limit" name="memory_limit" 
+                       value="128" min="64" max="1024">
+                <div class="form-text">Maximum memory usage allowed</div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="constraints" class="form-label fw-semibold">Constraints</label>
+              <textarea class="form-control" id="constraints" name="constraints" rows="4"
+                        placeholder="e.g., 
+1 ≤ n ≤ 10^5
+-10^9 ≤ arr[i] ≤ 10^9
+String length ≤ 1000"></textarea>
+              <div class="form-text">Specify input constraints and limitations</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="hints" class="form-label fw-semibold">Hints (Optional)</label>
+              <textarea class="form-control" id="hints" name="hints" rows="3"
+                        placeholder="Provide helpful hints for solving the problem (one per line)"></textarea>
+              <div class="form-text">Optional hints to help users solve the problem</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                <label class="form-check-label" for="is_active">
+                  Make this problem available to users immediately
+                </label>
+              </div>
+              <div>
+                <button type="button" class="btn btn-outline-secondary me-2" id="previewBtn">
+                  <i class="bi bi-eye me-1"></i>Preview
+                </button>
+                <button type="submit" class="btn btn-modern-primary">
+                  <i class="bi bi-cloud-upload me-1"></i>Upload Problem
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewModalLabel">
+          <i class="bi bi-eye me-2"></i>Problem Preview
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="previewContent">
+        <!-- Preview content will be inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('problemUploadForm').submit();">
+          <i class="bi bi-cloud-upload me-1"></i>Upload Problem
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load_page_js 'problems' %}
+<script>
+// Additional upload-specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    initializeProblemUpload();
+});
+
+function initializeProblemUpload() {
+    // Auto-generate slug from title
+    const titleInput = document.getElementById('title');
+    const slugInput = document.getElementById('slug');
+    
+    titleInput.addEventListener('input', function() {
+        const slug = this.value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        slugInput.value = slug;
+    });
+    
+    // Dynamic example management
+    initializeExampleManagement();
+    
+    // Dynamic test case management
+    initializeTestCaseManagement();
+    
+    // Dynamic starter code management
+    initializeStarterCodeManagement();
+    
+    // Preview functionality
+    initializePreview();
+}
+
+function initializeExampleManagement() {
+    const container = document.getElementById('examplesContainer');
+    const addBtn = document.getElementById('addExampleBtn');
+    let exampleCount = 1;
+    
+    addBtn.addEventListener('click', function() {
+        exampleCount++;
+        const newExample = createExampleTemplate(exampleCount);
+        container.appendChild(newExample);
+        updateRemoveButtons('example');
+    });
+    
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-example')) {
+            e.target.closest('.example-item').remove();
+            updateRemoveButtons('example');
+        }
+    });
+}
+
+function initializeTestCaseManagement() {
+    const container = document.getElementById('testCasesContainer');
+    const addBtn = document.getElementById('addTestCaseBtn');
+    let testCaseCount = 1;
+    
+    addBtn.addEventListener('click', function() {
+        testCaseCount++;
+        const newTestCase = createTestCaseTemplate(testCaseCount);
+        container.appendChild(newTestCase);
+        updateRemoveButtons('test-case');
+    });
+    
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-test-case')) {
+            e.target.closest('.test-case-item').remove();
+            updateRemoveButtons('test-case');
+        }
+    });
+}
+
+function initializeStarterCodeManagement() {
+    const container = document.getElementById('starterCodeContainer');
+    const addBtn = document.getElementById('addStarterCodeBtn');
+    let starterCodeCount = 1;
+    
+    addBtn.addEventListener('click', function() {
+        starterCodeCount++;
+        const newStarterCode = createStarterCodeTemplate(starterCodeCount);
+        container.appendChild(newStarterCode);
+        updateRemoveButtons('starter-code');
+    });
+    
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-starter-code')) {
+            e.target.closest('.starter-code-item').remove();
+            updateRemoveButtons('starter-code');
+        }
+    });
+}
+
+function createExampleTemplate(count) {
+    const div = document.createElement('div');
+    div.className = 'example-item border rounded p-3 mb-3';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-semibold mb-0">Example ${count}</h6>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-example">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Input</label>
+                <textarea class="form-control" name="example_input[]" rows="3" 
+                          placeholder="Sample input for this example"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Expected Output</label>
+                <textarea class="form-control" name="example_output[]" rows="3" 
+                          placeholder="Expected output for this input"></textarea>
+            </div>
+        </div>
+        <div class="mb-0">
+            <label class="form-label fw-semibold">Explanation (Optional)</label>
+            <textarea class="form-control" name="example_explanation[]" rows="2" 
+                      placeholder="Explain how the input produces this output"></textarea>
+        </div>
+    `;
+    return div;
+}
+
+function createTestCaseTemplate(count) {
+    const div = document.createElement('div');
+    div.className = 'test-case-item border rounded p-3 mb-3';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-semibold mb-0">Test Case ${count}</h6>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-test-case">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Input</label>
+                <textarea class="form-control" name="test_input[]" rows="3" required
+                          placeholder="Test case input"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Expected Output</label>
+                <textarea class="form-control" name="test_output[]" rows="3" required
+                          placeholder="Expected output"></textarea>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function createStarterCodeTemplate(count) {
+    const div = document.createElement('div');
+    div.className = 'starter-code-item border rounded p-3 mb-3';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-semibold mb-0">Starter Code ${count}</h6>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-starter-code">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-semibold">Language</label>
+                <select class="form-select" name="starter_language[]" required>
+                    <option value="">Select Language</option>
+                    <option value="python">Python</option>
+                    <option value="c">C</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                    <option value="csharp">C#</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                </select>
+            </div>
+            <div class="col-md-8 mb-3">
+                <label class="form-label fw-semibold">Starter Code</label>
+                <textarea class="form-control font-monospace" name="starter_code[]" rows="6" 
+                          placeholder="def solution():
+    # Your code here
+    pass"></textarea>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function updateRemoveButtons(type) {
+    const items = document.querySelectorAll(`.${type}-item`);
+    items.forEach((item, index) => {
+        const removeBtn = item.querySelector(`.remove-${type}`);
+        if (removeBtn) {
+            removeBtn.style.display = items.length > 1 ? 'block' : 'none';
+        }
+    });
+}
+
+function initializePreview() {
+    const previewBtn = document.getElementById('previewBtn');
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const previewContent = document.getElementById('previewContent');
+    
+    previewBtn.addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('problemUploadForm'));
+        generatePreview(formData, previewContent);
+        previewModal.show();
+    });
+}
+
+function generatePreview(formData, container) {
+    const title = formData.get('title') || 'Untitled Problem';
+    const difficulty = formData.get('difficulty') || 'Not Set';
+    const statement = formData.get('statement') || 'No description provided';
+    const tags = formData.get('tags') || '';
+    
+    let previewHTML = `
+        <div class="problem-preview">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h3 class="fw-bold">${title}</h3>
+                <span class="difficulty-badge difficulty-${difficulty.toLowerCase()}">${difficulty}</span>
+            </div>
+            <div class="mb-4">
+                <h5>Problem Statement</h5>
+                <p class="text-muted">${statement}</p>
+            </div>
+    `;
+    
+    if (tags) {
+        previewHTML += `
+            <div class="mb-4">
+                <h6>Tags</h6>
+                ${tags.split(',').map(tag => `<span class="badge bg-light text-dark me-1">#${tag.trim()}</span>`).join('')}
+            </div>
+        `;
+    }
+    
+    // Add examples preview
+    const exampleInputs = formData.getAll('example_input[]');
+    const exampleOutputs = formData.getAll('example_output[]');
+    const exampleExplanations = formData.getAll('example_explanation[]');
+    
+    if (exampleInputs.length > 0 && exampleInputs[0]) {
+        previewHTML += '<div class="mb-4"><h6>Examples</h6>';
+        exampleInputs.forEach((input, index) => {
+            if (input.trim()) {
+                previewHTML += `
+                    <div class="example-preview border rounded p-3 mb-2">
+                        <strong>Example ${index + 1}:</strong>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">Input:</small>
+                                <pre class="bg-light p-2 rounded">${input}</pre>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Output:</small>
+                                <pre class="bg-light p-2 rounded">${exampleOutputs[index] || ''}</pre>
+                            </div>
+                        </div>
+                        ${exampleExplanations[index] ? `<div class="mt-2"><small><strong>Explanation:</strong> ${exampleExplanations[index]}</small></div>` : ''}
+                    </div>
+                `;
+            }
+        });
+        previewHTML += '</div>';
+    }
+    
+    previewHTML += '</div>';
+    container.innerHTML = previewHTML;
+}
+</script>
+{% endblock %}

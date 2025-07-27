@@ -1,5 +1,30 @@
 /* Compiler Page Specific Styles */
 
+/* CSS Variables for theming */
+:root {
+  --primary-color: #007bff;
+  --primary-dark: #0056b3;
+  --primary-rgb: 0, 123, 255;
+  --secondary-color: #6c757d;
+  --secondary-dark: #545b62;
+  --success-color: #28a745;
+  --success-rgb: 40, 167, 69;
+  --danger-color: #dc3545;
+  --danger-rgb: 220, 53, 69;
+  --warning-color: #ffc107;
+  --warning-rgb: 255, 193, 7;
+  --info-color: #17a2b8;
+  --info-rgb: 23, 162, 184;
+  --card-bg: #ffffff;
+  --input-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
 /* Compiler Layout */
 .compiler-container {
     height: calc(100vh - 80px);
@@ -465,4 +490,142 @@
         border-color: #404040;
         color: #ffffff;
     }
+}
+
+/* Language Selector Styling - Fixed Implementation */
+.language-selector {
+    background: var(--primary-dark) !important;
+    color: white !important;
+    border: 1px solid var(--primary-color) !important;
+    font-weight: 500;
+    border-radius: 6px !important;
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.875rem !important;
+    min-width: 120px !important;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.language-selector:focus {
+    background: var(--primary-dark) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25) !important;
+    outline: none !important;
+}
+
+.language-selector:hover {
+    background: #004085 !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* For browsers that support option styling (limited) */
+.language-selector option {
+    background: var(--primary-dark) !important;
+    color: white !important;
+    padding: 0.5rem !important;
+}
+
+/* Custom Dropdown - Properly Positioned */
+.custom-language-selector {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+    z-index: 1000;
+}
+
+.custom-dropdown-button {
+    background: var(--primary-dark) !important;
+    color: white !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 6px !important;
+    padding: 0.4rem 2rem 0.4rem 0.8rem !important;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    font-size: 0.875rem;
+    text-align: left;
+    white-space: nowrap;
+    position: relative;
+    height: auto;
+    min-height: 32px;
+}
+
+.custom-dropdown-button:hover {
+    background: #004085 !important;
+}
+
+.custom-dropdown-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25) !important;
+}
+
+.custom-dropdown-button::after {
+    content: "▼";
+    color: white;
+    font-size: 0.7rem;
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+}
+
+.custom-dropdown-button.open::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    background: var(--primary-dark);
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 120px;
+}
+
+.custom-dropdown-menu.show {
+    display: block;
+}
+
+.custom-dropdown-item {
+    padding: 0.6rem 0.8rem;
+    cursor: pointer;
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.custom-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.custom-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.custom-dropdown-item.selected {
+    background: var(--primary-color);
+    font-weight: 600;
+}
+
+.custom-dropdown-item i {
+    width: 16px;
+    text-align: center;
 }

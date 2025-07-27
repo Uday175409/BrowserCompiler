@@ -64,6 +64,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "App.middleware.Custom404Middleware",  # Custom 404 handler for DEBUG mode
 ]
 
 ROOT_URLCONF = "compiler.urls"
