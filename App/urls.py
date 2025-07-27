@@ -36,7 +36,6 @@ urlpatterns = [
         name="admin-problem-insert",
     ),
     path("manage/logout/", admin_views.admin_logout, name="admin-logout"),
-    path("test-404/", views.custom_404_test, name="test-404"),  # Test 404 page
     path("result/", views.execution_result, name="result"),
     path("languages/", views.languages_supported, name="languages"),
     path("about/", views.about_page, name="about"),

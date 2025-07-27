@@ -239,13 +239,6 @@ def custom_404(request, exception):
     return render(request, "404.html", status=404)
 
 
-def custom_404_test(request):
-    """
-    Test view for the custom 404 page - works even in DEBUG mode
-    """
-    return render(request, "404.html", status=404)
-
-
 def custom_404_catch_all(request, invalid_path):
     """
     Catch-all view for handling any undefined URLs - works in DEBUG mode

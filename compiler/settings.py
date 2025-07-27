@@ -49,8 +49,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
     "cloudinary_storage",
     "cloudinary",
     "App",  # Your application
@@ -64,7 +62,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "App.middleware.Custom404Middleware",  # Custom 404 handler for DEBUG mode
 ]
 
 ROOT_URLCONF = "compiler.urls"
@@ -116,14 +113,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "App.authentication.CookieTokenAuthentication",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
-}
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 

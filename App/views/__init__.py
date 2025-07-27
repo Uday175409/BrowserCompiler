@@ -18,6 +18,5 @@ from .profile_views import (
     contact_page,
     user_history,
     custom_404,
-    custom_404_test,
     custom_404_catch_all,
 )

@@ -1,0 +1,18 @@
+# Django Framework
+Django==5.2.1
+
+# Environment Management
+python-dotenv==1.0.0
+
+# Image Processing
+Pillow==10.0.0
+
+# Cloud Storage
+cloudinary==1.33.0
+django-cloudinary-storage==0.3.0
+
+# Database
+pymongo==4.4.1
+
+# Development Tools
+django-extensions==3.2.3
