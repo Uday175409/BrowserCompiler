@@ -3,10 +3,8 @@
 from App.DB.db import mongo_db
 from datetime import datetime
 from bson import ObjectId
-from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017")
-mongo_db = client["codingPlatform"]
+# Use the shared MongoDB connection from DB/db.py
 submissions_collection = mongo_db["submissions"]
 comments_collection = mongo_db["comments"]
 

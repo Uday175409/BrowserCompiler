@@ -95,13 +95,24 @@ class StarterCode(models.Model):
     base_code_c = models.TextField(blank=True, null=True)
 
     def get_code(self, lang, slug="function_name"):
+        """
+        Get starter code for the specified language.
+        If no code is available for the language, returns an empty string.
+        """
         fallback_function_name = slug.replace("-", "_")
         return {
             "python": self.base_code_python,
             "cpp": self.base_code_cpp,
             "java": self.base_code_java,
             "c": self.base_code_c,
-        }.get(lang, "")
+        }.get(lang.lower(), "")
+
+    def has_code_for_language(self, lang):
+        """
+        Check if there's starter code available for the specified language.
+        """
+        code = self.get_code(lang)
+        return bool(code and code.strip())
 
 
 class UserSubmission(models.Model):
@@ -121,19 +132,13 @@ class UserSubmission(models.Model):
     status = models.CharField(max_length=30, choices=STATUS_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    # Track if this is a saved submission for history
+    is_history = models.BooleanField(default=False)
+
     def __str__(self):
+        if self.is_history:
+            return f"History: {self.user.username} on {self.problem.title}"
         return f"{self.user.username} - {self.problem.title} - {self.status}"
-
-
-class SubmissionHistory(models.Model):
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
-    problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
-    language = models.CharField(max_length=20)
-    code = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"History: {self.user.username} on {self.problem.title}"
 
 
 class Leaderboard(models.Model):

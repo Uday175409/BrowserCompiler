@@ -562,7 +562,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   require(['vs/editor/editor.main'], function () {
     const defaultLang = `{{ language|default:"python" }}`;
-    const initialCode = `{{ code|escapejs }}` || templates[defaultLang];
+    // Make sure we have initial code, falling back to templates if needed
+    let initialCode = `{{ code|escapejs }}`;
+    if (!initialCode || initialCode.trim() === '') {
+      initialCode = templates[defaultLang] || "# Write your code here";
+      console.log("⚠️ No initial code provided, using template for", defaultLang);
+    }
     
     console.log("🎯 Monaco Editor Initialization");
     console.log("🏷️ Default language:", defaultLang);
@@ -633,12 +638,25 @@ document.addEventListener("DOMContentLoaded", function () {
     languageSelect.addEventListener("change", () => {
       const selectedLang = languageSelect.value;
       const currentCode = editor.getValue();
-      const newCode = templates[selectedLang] || "// Write your code here";
+      
+      // Make sure we get the template code for the selected language
+      // If templates[selectedLang] is empty or undefined, use the default template
+      const templateCode = templates[selectedLang];
+      const defaultTemplate = {
+        "python": "# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)",
+        "cpp": "#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << \"Hello, World!\" << endl;\n    return 0;\n}",
+        "java": "public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println(\"Hello, World!\");\n    }\n}",
+        "c": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf(\"Hello, World!\\n\");\n    return 0;\n}"
+      };
+      
+      // Use template code if available, otherwise use default template for the language
+      const newCode = templateCode && templateCode.trim() ? templateCode : defaultTemplate[selectedLang] || "// Write your code here";
       
       console.log("🔄 Language change detected");
       console.log("📋 Previous language:", hiddenLanguage.value);
       console.log("🆕 New language:", selectedLang);
       console.log("📝 Current code length:", currentCode.length);
+      console.log("🔤 Template code available:", !!templateCode);
       console.log("🔤 Template code length:", newCode.length);
       
       // Create new model with proper language

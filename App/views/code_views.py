@@ -56,17 +56,28 @@ def compile_code_monaco(request, slug=None):
     # Map language for backend processing
     backend_language = language_map.get(selected_language, "python")
 
+    # Default templates if no problem is specified
+    default_templates = {
+        "python": "# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)",
+        "cpp": '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
+        "java": 'public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println("Hello, World!");\n    }\n}',
+        "c": '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf("Hello, World!\\n");\n    return 0;\n}',
+    }
+
     starter_code = (
         get_starter_code(problem, backend_language)
         if problem
-        else "# Write your code here\nprint('Hello World')"
+        else default_templates.get(
+            backend_language, "# Write your code here\nprint('Hello World')"
+        )
     )
 
     starter_codes = {}
     for lang_key, lang_name in language_map.items():
-        starter_codes[lang_key] = (
-            get_starter_code(problem, lang_name) if problem else ""
-        )
+        if problem:
+            starter_codes[lang_key] = get_starter_code(problem, lang_name)
+        else:
+            starter_codes[lang_key] = default_templates.get(lang_key, "")
 
     comments = get_comments_for_problem(slug) if problem else []
 
@@ -202,14 +213,23 @@ def compile_code_basic(request):
             },
         )
 
+    # Define default starter code templates for each language
+    starter_codes = {
+        "python": "# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)",
+        "cpp": '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
+        "java": 'public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println("Hello, World!");\n    }\n}',
+        "c": '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf("Hello, World!\\n");\n    return 0;\n}',
+    }
+
     return render(
         request,
         "compiler/index.html",
         {
-            "code": "# Write your code here\nprint('Hello World')",
+            "code": starter_codes["python"],
             "language": "python",
             "input": "",
             "output": "",
+            "starter_codes": starter_codes,
         },
     )
 
