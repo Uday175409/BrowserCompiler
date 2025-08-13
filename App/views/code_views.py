@@ -14,7 +14,9 @@ from App.serializers import ProblemSerializer
 
 # Core models and execution
 from App.models import Problem
-from App.code_runner.code_runner3 import execute_code
+from App.code_runner.code_runner2 import execute_code
+
+# from App.code_runner.code_runner2 import execute_code
 from App.mongo import log_submission_attempt, get_comments_for_problem, save_comment
 
 # Standard library
@@ -62,6 +64,14 @@ def compile_code_monaco(request, slug=None):
         "cpp": '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
         "java": 'public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println("Hello, World!");\n    }\n}',
         "c": '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf("Hello, World!\\n");\n    return 0;\n}',
+    }
+
+    # Define default starter code templates for each language
+    starter_codes = {
+        "python": '# Write your code here\nprint("Hello, World!")',
+        "cpp": '# Write your code here\n#include <iostream>\nint main(){\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
+        "java": '# Write your code here\npublic class Main {\n    public static void main(String[] args){\n        System.out.println("Hello, World!");\n    }\n}',
+        "c": '# Write your code here\n#include <stdio.h>\nint main(){\n    printf("Hello, World!\\n");\n    return 0;\n}',
     }
 
     starter_code = (
@@ -199,13 +209,24 @@ def compile_code_basic(request):
                 },
             )
 
-        result = execute_code(code, language=language, input_data=custom_input)
+        # Automatically append driver code for Python
+        if language.lower() == "python":
+            # Only add driver if not present
+            if "if __name__ == '__main__'" not in code:
+                driver_code = "\nif __name__ == '__main__':\n    result = solve()\n    print(result)"
+                code_to_run = code.strip() + driver_code
+            else:
+                code_to_run = code
+        else:
+            code_to_run = code
+
+        result = execute_code(code_to_run, language=language, input_data=custom_input)
 
         return render(
             request,
             "compiler/index.html",
             {
-                "code": code,
+                "code": code,  # Show only user code
                 "language": language,
                 "input": custom_input,
                 "output": result.strip(),
@@ -213,12 +234,12 @@ def compile_code_basic(request):
             },
         )
 
-    # Define default starter code templates for each language
+    # Minimal starter code templates for each language
     starter_codes = {
-        "python": "# Write your Python code here\ndef solve():\n    # Your solution goes here\n    pass\n\nif __name__ == '__main__':\n    result = solve()\n    print(result)",
-        "cpp": '#include <iostream>\n#include <vector>\n#include <string>\nusing namespace std;\n\nint main() {\n    // Your C++ code here\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
-        "java": 'public class Main {\n    public static void main(String[] args) {\n        // Your Java code here\n        System.out.println("Hello, World!");\n    }\n}',
-        "c": '#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nint main() {\n    // Your C code here\n    printf("Hello, World!\\n");\n    return 0;\n}',
+        "python": '# Write your code here\nprint("Hello, World!")',
+        "cpp": '#include <iostream>\nusing namespace std;\n// Write your code here\ncout << "Hello, World!" << endl;',
+        "java": '// Write your code here\nSystem.out.println("Hello, World!");',
+        "c": '// Write your code here\nprintf("Hello, World!\\n");',
     }
 
     return render(

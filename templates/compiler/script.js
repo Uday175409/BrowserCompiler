@@ -6,16 +6,41 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLanguage = 'python';
     let isRunning = false;
     
+    // Initialize language from editorConfig if available
+    if (typeof editorConfig !== 'undefined' && editorConfig.language) {
+        currentLanguage = editorConfig.language;
+    }
+    
     // Initialize Monaco Editor
-    if (typeof monaco !== 'undefined') {
+    if (typeof require !== 'undefined') {
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            initializeEditor();
+        });
+    } else if (typeof monaco !== 'undefined') {
         initializeEditor();
     } else {
         console.error('Monaco Editor not loaded');
     }
 
     function initializeEditor() {
-        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: getStarterCode(currentLanguage),
+        console.log('Initializing editor with language:', currentLanguage);
+        
+        // Get initial code from editorConfig or saved localStorage or starter code
+        let initialCode = '';
+        if (typeof editorConfig !== 'undefined' && editorConfig.code) {
+            initialCode = editorConfig.code;
+            console.log('Using code from editorConfig');
+        } else {
+            const savedCode = loadCodeFromStorage(currentLanguage);
+            initialCode = savedCode || getStarterCode(currentLanguage);
+            console.log('Using saved or starter code');
+        }
+
+        console.log('Initial code:', initialCode.substring(0, 50) + '...');
+
+        editor = monaco.editor.create(document.getElementById('editor'), {
+            value: initialCode,
             language: getMonacoLanguage(currentLanguage),
             theme: 'vs-dark',
             fontSize: 14,
@@ -50,6 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        console.log('Editor created successfully');
+
         // Auto-save code
         editor.onDidChangeModelContent(() => {
             saveCodeToStorage();
@@ -63,22 +90,58 @@ document.addEventListener('DOMContentLoaded', function() {
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
             saveCode();
         });
+
+        // Initialize UI with current language
+        updateLanguageUI(currentLanguage);
     }
 
     // Language selection
     const languageSelect = document.getElementById('languageSelect');
     if (languageSelect) {
+        // Set initial language from editorConfig or current selection
+        if (typeof editorConfig !== 'undefined' && editorConfig.language) {
+            languageSelect.value = editorConfig.language;
+            currentLanguage = editorConfig.language;
+        }
+        
         languageSelect.addEventListener('change', function() {
             currentLanguage = this.value;
             changeLanguage(currentLanguage);
         });
+    } else {
+        console.warn('Language select element not found');
+    }
+
+    // Form submission handling
+    const codeForm = document.getElementById('codeForm');
+    if (codeForm) {
+        codeForm.addEventListener('submit', function(e) {
+            // Sync editor content with form
+            if (editor) {
+                const hiddenCode = document.getElementById('hiddenCode');
+                if (hiddenCode) {
+                    hiddenCode.value = editor.getValue();
+                }
+                const hiddenLanguage = document.getElementById('hiddenLanguage');
+                if (hiddenLanguage) {
+                    hiddenLanguage.value = currentLanguage;
+                }
+            }
+        });
     }
 
     function changeLanguage(language) {
-        if (!editor) return;
+        console.log('Changing language to:', language);
+        if (!editor) {
+            console.error('Editor not initialized');
+            return;
+        }
         
         const newCode = getStarterCode(language);
         const monacoLang = getMonacoLanguage(language);
+        
+        console.log('New code:', newCode.substring(0, 50) + '...');
+        console.log('Monaco language:', monacoLang);
         
         // Save current code before switching
         saveCodeToStorage();
@@ -93,6 +156,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update UI
         updateLanguageUI(language);
+        
+        console.log('Language changed successfully to:', language);
+    }
+
+    function updateLanguageUI(language) {
+        // Update the language selector if it exists
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect && languageSelect.value !== language) {
+            languageSelect.value = language;
+        }
+
+        // Update the hidden language field for form submission
+        const hiddenLanguage = document.getElementById('hiddenLanguage');
+        if (hiddenLanguage) {
+            hiddenLanguage.value = language;
+        }
+
+        // Update current language variable
+        currentLanguage = language;
     }
 
     function getMonacoLanguage(language) {
@@ -110,6 +192,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getStarterCode(language) {
+        // Use editorConfig from HTML template if available
+        if (typeof editorConfig !== 'undefined' && editorConfig.templates && editorConfig.templates[language]) {
+            return editorConfig.templates[language];
+        }
+
+        // Fallback to hardcoded starters
         const starters = {
             'python': `# Write your solution here
 def solution():
