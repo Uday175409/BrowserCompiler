@@ -2,7 +2,7 @@ import http.client
 import json
 import time
 import base64
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
 import os
 
 load_dotenv()
@@ -16,14 +16,28 @@ headers = {
     "x-rapidapi-host": API_HOST,
 }
 
+LANGUAGE_ID_MAP = {
+    "python": 71,
+    "cpp": 54,
+    "c": 50,
+    "java": 62,
+    "javascript": 63,
+    "go": 60,
+    "rust": 73,
+    "typescript": 74,
+}
 
-def send_code_submission(code, language_id=71, input_data=""):
-    """Submit code to Judge0 and return the token."""
 
-    # ✅ Encode source code and input to Base64
+def get_language_id(language):
+    if isinstance(language, int):
+        return language
+    return LANGUAGE_ID_MAP.get(language.lower(), 71)
+
+
+def send_code_submission(code, language="python", input_data=""):
+    language_id = get_language_id(language)
     encoded_code = base64.b64encode(code.encode()).decode()
     encoded_input = base64.b64encode(input_data.encode()).decode()
-
     payload = json.dumps(
         {
             "language_id": language_id,
@@ -31,7 +45,6 @@ def send_code_submission(code, language_id=71, input_data=""):
             "stdin": encoded_input,
         }
     )
-
     conn = http.client.HTTPSConnection(API_HOST)
     conn.request(
         "POST",
@@ -55,10 +68,10 @@ def get_submission_result(token):
     return json.loads(result)
 
 
-def execute_code(code, language_id=71, input_data=""):
+def execute_code(code, language="python", input_data=""):
     """Execute code and return the result output or error."""
     try:
-        token = send_code_submission(code, language_id, input_data)
+        token = send_code_submission(code, language, input_data)
         time.sleep(2)  # Wait before fetching result
 
         result = get_submission_result(token)
@@ -72,8 +85,3 @@ def execute_code(code, language_id=71, input_data=""):
             return "Unknown Error: " + str(result)
     except Exception as e:
         return f"Exception occurred: {str(e)}"
-
-
-code = "print(10*20+2)"
-res = execute_code(code)
-print(res)

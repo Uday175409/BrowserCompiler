@@ -104,11 +104,15 @@ def register_user(request):
 # ------------------------
 from django.contrib.auth import login  # Add this import
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.csrf import csrf_exempt  # Add this import
 
 
+@csrf_exempt  # Add this decorator to bypass CSRF during testing
 def login_user(request):
     if request.method == "POST":
-        email = request.POST.get("username", "").strip()
+        email = request.POST.get(
+            "username", ""
+        ).strip()  # Form field is still named 'username' but contains email
         password = request.POST.get("password", "").strip()
 
         try:

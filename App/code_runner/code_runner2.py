@@ -1,5 +1,4 @@
-import http.client
-import json
+import requests
 import base64
 import os
 from dotenv import load_dotenv
@@ -12,12 +11,6 @@ API_KEY = os.getenv(
 
 
 API_HOST = "judge029.p.rapidapi.com"
-
-headers = {
-    "content-type": "application/json",
-    "x-rapidapi-key": API_KEY,
-    "x-rapidapi-host": API_HOST,
-}
 
 # Language name to Judge0 language_id map
 LANGUAGE_ID_MAP = {
@@ -46,27 +39,21 @@ def send_code_submission(code, language, input_data=""):
     language_id = get_language_id(language)
     encoded_code = base64.b64encode(code.encode()).decode()
     encoded_input = base64.b64encode(input_data.encode()).decode()
-
-    payload_data = {
+    payload = {
         "language_id": language_id,
         "source_code": encoded_code,
         "stdin": encoded_input,
     }
-
-    payload = json.dumps(payload_data)
-
-    conn = http.client.HTTPSConnection(API_HOST)
-    conn.request(
-        "POST",
-        "/submissions?base64_encoded=true&wait=true",
-        body=payload,
-        headers=headers,
-    )
-    res = conn.getresponse()
-    data = res.read()
-    conn.close()
-
-    return json.loads(data)
+    headers = {
+        "content-type": "application/json",
+        "x-rapidapi-key": API_KEY,
+        "x-rapidapi-host": API_HOST,
+    }
+    url = f"https://{API_HOST}/submissions?base64_encoded=true&wait=true"
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"Judge0 API error: {response.status_code} {response.text}")
+    return response.json()
 
 
 def execute_code(code, language="python", input_data=""):

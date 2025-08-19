@@ -196,18 +196,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function validateUsername() {
         const username = this.value.trim();
-        const usernamePattern = /^[a-zA-Z0-9_]{3,20}$/;
         
-        if (username && !usernamePattern.test(username)) {
-            this.classList.add('is-invalid');
-            this.classList.remove('is-valid');
-            showFieldError(this, 'Username must be 3-20 characters, letters, numbers, and underscores only');
-        } else if (username) {
+        // Remove strict validation, only check if empty
+        if (username) {
             this.classList.remove('is-invalid');
             this.classList.add('is-valid');
             hideFieldError(this);
         } else {
-            this.classList.remove('is-invalid', 'is-valid');
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+            showFieldError(this, 'Username cannot be empty');
+        }
             hideFieldError(this);
         }
     }
