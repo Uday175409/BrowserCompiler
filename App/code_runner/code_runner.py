@@ -6,7 +6,12 @@ from dotenv import load_dotenv  # type: ignore
 import os
 
 load_dotenv()
-API_KEY = "e0f508d109mshd80507861f478a1p1dde1bjsn599150ef2022"
+API_KEY = os.getenv("API_KEY")
+
+if not API_KEY:
+    print("WARNING: API_KEY not found in environment variables")
+    # Fallback to hardcoded key for development (remove in production)
+    API_KEY = "e0f508d109mshd80507861f478a1p1dde1bjsn599150ef2022"
 
 API_HOST = "judge0-ce.p.rapidapi.com"
 

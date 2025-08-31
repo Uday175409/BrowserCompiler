@@ -449,6 +449,6 @@
   };
   {% endif %}
 </script>
-<!-- Using simplified script specifically to fix language switching -->
-<script src="{% static 'compiler/simple_script.js' %}?v={% now 'U' %}"></script>
+<!-- Monaco Editor Script -->
+<script src="{% static 'compiler/script.js' %}?v={% now 'U' %}"></script>
 {% endblock %}

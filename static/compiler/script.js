@@ -11,14 +11,8 @@
 function initializeBootstrapDropdown() {
   console.log('🔍 Starting Bootstrap dropdown initialization...');
   
-  // DISABLED for troubleshooting - using standard select instead
-  return false;
-  
-  /* 
   // Find the original select element
   const originalSelect = document.getElementById('languageSelect');
-  console.log('📍 Original select element found:', !!originalSelect);
-  */
   
   // Safety check - exit if element not found
   if (!originalSelect) {
