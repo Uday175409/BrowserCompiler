@@ -5,6 +5,15 @@
 {% block links %}
 {% load_page_css 'profile' %}
 <style>
+  .profile-pic-preview {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border-style: solid;
+    max-width: 100%;
+  }
+  
   .upload-overlay {
     position: absolute;
     top: 0;
@@ -120,31 +129,14 @@
                 <i class="bi bi-image me-2"></i>Profile Picture
               </label>
               <div class="text-center">
-                <div class="image-upload-container mb-3">
-                  {% if user.profile_pic %}
-                    <img
-                      id="preview"
-                      src="{{ user.profile_pic.url }}"
-                      alt="Profile Picture"
-                      class="rounded-circle border-3 border-primary object-fit-cover"
-                      style="width: 150px; height: 150px;"
-                    >
-                  {% else %}
-                    <div id="preview-placeholder" class="rounded-circle border-3 border-dashed border-secondary d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 150px;">
-                      <i class="bi bi-person-circle display-4 text-muted"></i>
-                    </div>
-                    <img
-                      id="preview"
-                      src=""
-                      alt="Preview"
-                      class="rounded-circle border-3 border-primary object-fit-cover d-none"
-                      style="width: 150px; height: 150px;"
-                    >
-                  {% endif %}
-                  <div class="upload-overlay">
-                    <i class="bi bi-camera-fill text-white fs-3"></i>
-                  </div>
-                </div>
+                <input 
+                  type="file" 
+                  name="profile_pic" 
+                  id="profilePicInput"
+                  class="form-control" 
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+                  onchange="validateAndPreviewImage(this)"
+                >
                 
                 <input 
                   type="file" 
@@ -183,8 +175,6 @@
 <script>
 function validateAndPreviewImage(input) {
   const file = input.files[0];
-  const preview = document.getElementById('preview');
-  const placeholder = document.getElementById('preview-placeholder');
   const errorDiv = document.getElementById('imageError');
   const successDiv = document.getElementById('imageSuccess');
   const saveBtn = document.getElementById('saveBtn');
@@ -194,10 +184,6 @@ function validateAndPreviewImage(input) {
   successDiv.classList.add('d-none');
   
   if (!file) {
-    if (placeholder) {
-      placeholder.classList.remove('d-none');
-      preview.classList.add('d-none');
-    }
     return;
   }
   
@@ -233,17 +219,6 @@ function validateAndPreviewImage(input) {
     } else {
       showSuccess(`Image looks good! Dimensions: ${width}x${height}px, Size: ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
     }
-    
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      preview.src = e.target.result;
-      preview.classList.remove('d-none');
-      if (placeholder) {
-        placeholder.classList.add('d-none');
-      }
-    };
-    reader.readAsDataURL(file);
   };
   
   img.onerror = function() {
@@ -252,11 +227,25 @@ function validateAndPreviewImage(input) {
   };
   
   // Load image to check dimensions
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    img.src = e.target.result;
+  const objectUrl = URL.createObjectURL(file);
+  img.src = objectUrl;
+  
+  // Clean up object URL when done
+  img.onload = function() {
+    URL.revokeObjectURL(objectUrl);
+    const width = this.naturalWidth;
+    const height = this.naturalHeight;
+    
+    // Check dimensions (recommended max: 2000x2000)
+    if (width > 2000 || height > 2000) {
+      showError(`Image dimensions too large! Maximum recommended: 2000x2000px. Your image: ${width}x${height}px. The image will be automatically resized.`);
+    } else if (width < 100 || height < 100) {
+      showError(`Image dimensions too small! Minimum recommended: 100x100px. Your image: ${width}x${height}px`);
+      input.value = '';
+    } else {
+      showSuccess(`Image looks good! Dimensions: ${width}x${height}px, Size: ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
+    }
   };
-  reader.readAsDataURL(file);
 }
 
 function showError(message) {
@@ -299,34 +288,8 @@ document.getElementById('profileForm').addEventListener('submit', function(e) {
   // The button will be re-enabled when the page reloads
 });
 
-// Drag and drop functionality
-const imageContainer = document.querySelector('.image-upload-container');
+// Initialize file input
 const fileInput = document.getElementById('profilePicInput');
-
-imageContainer.addEventListener('click', function() {
-  fileInput.click();
-});
-
-imageContainer.addEventListener('dragover', function(e) {
-  e.preventDefault();
-  this.style.opacity = '0.8';
-});
-
-imageContainer.addEventListener('dragleave', function(e) {
-  e.preventDefault();
-  this.style.opacity = '1';
-});
-
-imageContainer.addEventListener('drop', function(e) {
-  e.preventDefault();
-  this.style.opacity = '1';
-  
-  const files = e.dataTransfer.files;
-  if (files.length > 0) {
-    fileInput.files = files;
-    validateAndPreviewImage(fileInput);
-  }
-});
 {% load_page_js 'profile' %}
 </script>
 {% endblock %}
