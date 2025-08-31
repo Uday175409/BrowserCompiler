@@ -2,7 +2,7 @@
 
 # Django & REST imports
 from django.shortcuts import render, redirect
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import check_password
 from django.contrib import messages
 from django.db import IntegrityError
 
@@ -70,31 +70,35 @@ def register_user(request):
         dob = request.POST.get("dob", "").strip()
         password = request.POST.get("password", "").strip()
 
+        # Validation
+        if AppUser.objects.filter(username=username).exists():
+            return render(request, "auth/auth.html", {"error": "Username already exists"})
+            
         if AppUser.objects.filter(email=email).exists():
             return render(request, "auth/auth.html", {"error": "Email already exists"})
 
         if AppUser.objects.filter(phone=phone).exists():
-            return render(
-                request, "auth/auth.html", {"error": "Phone number already exists"}
-            )
+            return render(request, "auth/auth.html", {"error": "Phone number already exists"})
 
         try:
-            user = AppUser(
-                email=email,
-                phone=phone,
+            user = AppUser.objects.create_user(
                 username=username,
+                email=email,
+                password=password,
                 first_name=first_name,
                 last_name=last_name,
+                phone=phone,
                 gender=gender,
                 dob=dob if dob else None,
-                password=make_password(password),
             )
-            user.save()
-            messages.success(request, "Registration successful.")
+            messages.success(request, "Registration successful! Please login.")
             return redirect("auth-page")
         except IntegrityError as e:
             print(f"IntegrityError: {e}")
-            return render(request, "auth/auth.html", {"error": "Something went wrong"})
+            return render(request, "auth/auth.html", {"error": "Username or email already exists"})
+        except Exception as e:
+            print(f"Registration error: {e}")
+            return render(request, "auth/auth.html", {"error": "Registration failed. Please try again."})
 
     return render(request, "auth/auth.html")
 

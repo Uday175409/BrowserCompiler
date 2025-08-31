@@ -207,8 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('is-valid');
             showFieldError(this, 'Username cannot be empty');
         }
-            hideFieldError(this);
-        }
     }
     
     function showFieldError(field, message) {

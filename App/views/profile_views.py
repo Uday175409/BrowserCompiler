@@ -75,8 +75,8 @@ def upload_image_to_cloudinary(image_file, folder="profile_pics"):
 
 @login_required(login_url="auth-page")
 def profile_view(request):
-    user = request.user  # ✅ Use Django auth system
-    return render(request, "profile/index.html", {"user": user})
+    user = request.user
+    return render(request, "profile/simple.html", {"user": user})
 
 
 # ----------------------------

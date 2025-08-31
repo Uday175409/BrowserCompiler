@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h3>Profile</h3>
+        </div>
+        <div class="card-body">
+          <p><strong>Username:</strong> {{ user.username }}</p>
+          <p><strong>Email:</strong> {{ user.email }}</p>
+          <p><strong>Phone:</strong> {{ user.phone|default:"Not provided" }}</p>
+          <p><strong>Gender:</strong> {{ user.gender|default:"Not specified" }}</p>
+          <p><strong>Member since:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+          
+          <div class="mt-4">
+            <a href="{% url 'update-profile' %}" class="btn btn-primary">Edit Profile</a>
+            <a href="{% url 'history' %}" class="btn btn-secondary">View History</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
