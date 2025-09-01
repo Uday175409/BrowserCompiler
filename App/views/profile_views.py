@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import check_password
 from django.contrib import messages
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from PIL import Image
+## Removed unused Pillow import
 import os
 import cloudinary.uploader
 from .code_views import (
