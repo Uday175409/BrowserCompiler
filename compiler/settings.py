@@ -162,3 +162,5 @@ cloudinary.config(
 # Use Cloudinary for media files in production
 # For development, you can still use local storage by commenting these lines
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
